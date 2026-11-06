@@ -33,7 +33,20 @@ public class StringUtil {
             dataOutput.close();
             return Base64Coder.encodeLines(outputStream.toByteArray());
         } catch (Exception exception) {
-            throw new IllegalStateException("Unable to save item stacks.", exception);
+            // One unusable item must not abort the save of the whole database.
+            InventoryPagesPlus.plugin.getLogger().warning("Unable to save the item stack: " + contents[0]);
+            exception.printStackTrace();
+            return null;
+        }
+    }
+
+    public static ItemStack itemStackFromBase64(String data) {
+        try {
+            ItemStack[] stacks = stacksFromBase64(data);
+            return stacks.length == 0 ? null : stacks[0];
+        } catch (IOException exception) {
+            exception.printStackTrace();
+            return null;
         }
     }
 

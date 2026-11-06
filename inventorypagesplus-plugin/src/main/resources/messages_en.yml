@@ -16,7 +16,7 @@
 #  Some useful information:
 #  * You can set it to '' if you don't want to use the message.
 #    For list strings, just put (- '').
-#  * Support hex color.
+#  * Support hex color: &#RRGGBB, #RRGGBB, <#RRGGBB>, {#RRGGBB}.
 
 messages:
   prefix: '&#00ff8c[InventoryPagesPlus]&r '

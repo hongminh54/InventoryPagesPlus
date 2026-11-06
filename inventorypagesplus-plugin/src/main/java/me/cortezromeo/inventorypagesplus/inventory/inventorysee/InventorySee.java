@@ -54,23 +54,21 @@ public abstract class InventorySee extends CustomInventoryBase {
 
     @Override
     public void handleMenu(InventoryClickEvent event) {
-        if (event.getCurrentItem() != null && event.getCurrentItem().getType() != Material.AIR) {
-            ItemStack clickedItem = event.getCurrentItem();
-            if (InventoryPagesPlus.nms.getCustomData(clickedItem).equals("close")) {
-                getOwner().closeInventory();
-            }
-            if (InventoryPagesPlus.nms.getCustomData(clickedItem).equals("otherItemsInventory")) {
-                new InventorySeeOtherItems(getOwner(), getTargetName(), getTargetUUID(), getPage()).open();
-            }
-            if (InventoryPagesPlus.nms.getCustomData(clickedItem).equals("invseeMainInventory")) {
-                new InventorySeeMain(getOwner(), getTargetName(), getTargetUUID(), getPage()).open();
-            }
-            if (InventoryPagesPlus.nms.getCustomData(clickedItem).equals("creativeInventory")) {
-                new InventorySeeCreative(getOwner(), getTargetName(), getTargetUUID(), getPage()).open();
-            }
-            if (InventoryPagesPlus.nms.getCustomData(clickedItem).equals("enderChestInventory")) {
-                new InventorySeeEnderChest(getOwner(), getTargetName(), getTargetUUID(), getPage()).open();
-            }
+        ItemStack clickedItem = event.getCurrentItem();
+        if (clickedItem == null || clickedItem.getType() == Material.AIR)
+            return;
+
+        String customData = InventoryPagesPlus.nms.getCustomData(clickedItem);
+        if (customData.equals("close")) {
+            getOwner().closeInventory();
+        } else if (customData.equals("otherItemsInventory")) {
+            new InventorySeeOtherItems(getOwner(), getTargetName(), getTargetUUID(), getPage()).open();
+        } else if (customData.equals("invseeMainInventory")) {
+            new InventorySeeMain(getOwner(), getTargetName(), getTargetUUID(), getPage()).open();
+        } else if (customData.equals("creativeInventory")) {
+            new InventorySeeCreative(getOwner(), getTargetName(), getTargetUUID(), getPage()).open();
+        } else if (customData.equals("enderChestInventory")) {
+            new InventorySeeEnderChest(getOwner(), getTargetName(), getTargetUUID(), getPage()).open();
         }
     }
 

@@ -105,7 +105,7 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
                         ArrayList<ItemStack> pageItems = new ArrayList<>(25);
                         boolean emptyPage = true;
                         for (int slotNumber = 0; slotNumber < 25; slotNumber++) {
-                            ItemStack itemStack = StringUtil.stacksFromBase64(pageItemsBase64.get(page).get(slotNumber))[0];
+                            ItemStack itemStack = StringUtil.itemStackFromBase64(pageItemsBase64.get(page).get(slotNumber));
                             if (itemStack != null)
                                 emptyPage = false;
                             pageItems.add(itemStack);
@@ -121,7 +121,7 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
                     ArrayList<String> creativeItemsBase64 = gson.fromJson(creativeItemsString, new TypeToken<ArrayList<String>>(){}.getType());
                     ArrayList<ItemStack> creativeItemsItemStack = new ArrayList<>();
                     for (String base64Item : creativeItemsBase64)
-                        creativeItemsItemStack.add(StringUtil.stacksFromBase64(base64Item)[0]);
+                        creativeItemsItemStack.add(StringUtil.itemStackFromBase64(base64Item));
                     data.setCreativeItems(creativeItemsItemStack);
                 }
 

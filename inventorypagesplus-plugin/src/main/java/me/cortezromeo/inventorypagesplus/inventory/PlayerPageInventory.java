@@ -15,6 +15,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.UUID;
 
@@ -93,20 +94,15 @@ public class PlayerPageInventory {
     }
 
     private static boolean isSwitcherItem(ItemStack item, ItemStack switcherItem) {
-        if (item != null) {
-            if (item.getType() != null) {
-                if (item.getType().equals(switcherItem.getType())) {
-                    if (item.getItemMeta() != null) {
-                        if (item.getItemMeta().getDisplayName() != null) {
-                            if (item.getItemMeta().getDisplayName().equals(switcherItem.getItemMeta().getDisplayName())) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return false;
+        if (item == null || item.getType() != switcherItem.getType())
+            return false;
+
+        ItemMeta itemMeta = item.getItemMeta();
+        ItemMeta switcherItemMeta = switcherItem.getItemMeta();
+
+        return itemMeta != null && switcherItemMeta != null
+                && itemMeta.getDisplayName() != null
+                && itemMeta.getDisplayName().equals(switcherItemMeta.getDisplayName());
     }
 
 }

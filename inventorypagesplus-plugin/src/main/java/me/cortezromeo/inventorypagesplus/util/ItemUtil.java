@@ -7,32 +7,36 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ItemUtil {
 
     public static ItemStack getItem(String type, String value, short itemData, int customModelData, String name, List<String> lore) {
-        AtomicReference<ItemStack> material = new AtomicReference<>(new ItemStack(Material.BEDROCK));
+        ItemStack itemStack;
 
         if (type.equalsIgnoreCase("customhead"))
-            material.set(InventoryPagesPlus.nms.getHeadItemFromBase64(value));
-        if (type.equalsIgnoreCase("playerhead"))
-            material.set(InventoryPagesPlus.nms.getHeadItemFromPlayerName(value));
-        if (type.equalsIgnoreCase("material"))
-            material.set(InventoryPagesPlus.nms.createItemStack(value, 1, itemData, customModelData));
+            itemStack = InventoryPagesPlus.nms.getHeadItemFromBase64(value);
+        else if (type.equalsIgnoreCase("playerhead"))
+            itemStack = InventoryPagesPlus.nms.getHeadItemFromPlayerName(value);
+        else if (type.equalsIgnoreCase("material"))
+            itemStack = InventoryPagesPlus.nms.createItemStack(value, 1, itemData, customModelData);
+        else {
+            InventoryPagesPlus.plugin.getLogger().severe("ITEM TYPE " + type + " DOES NOT EXIST!");
+            itemStack = new ItemStack(Material.BEDROCK);
+        }
 
-        ItemMeta materialMeta = material.get().getItemMeta();
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta == null)
+            return itemStack;
 
-        materialMeta.setDisplayName(InventoryPagesPlus.nms.addColor(name));
+        itemMeta.setDisplayName(InventoryPagesPlus.nms.addColor(name));
 
-        List<String> newList = new ArrayList<>();
-
+        List<String> coloredLore = new ArrayList<>();
         for (String string : lore)
-            newList.add(InventoryPagesPlus.nms.addColor(string));
-        materialMeta.setLore(newList);
+            coloredLore.add(InventoryPagesPlus.nms.addColor(string));
+        itemMeta.setLore(coloredLore);
 
-        material.get().setItemMeta(materialMeta);
-        return material.get();
+        itemStack.setItemMeta(itemMeta);
+        return itemStack;
     }
 
 }

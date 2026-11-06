@@ -72,21 +72,13 @@ public class PageSlotManager {
         int defaultPrevItemSlot = Settings.INVENTORY_SETTINGS_PREV_ITEM_POS_DEFAULT;
         int defaultNextItemSlot = Settings.INVENTORY_SETTINGS_NEXT_ITEM_POS_DEFAULT;
 
-        if (getItem(player, 9 + defaultNextItemSlot) != null) {
-            if (!InventoryPagesPlus.nms.getCustomData(getItem(player, 9 + defaultNextItemSlot)).equals("inventorypagespluspageitems")) {
-                if (!InventoryPagesPlus.nms.getCustomData(getItem(player, 9 + defaultNextItemSlot)).equals(PlayerPageInventory.itemCustomData)) {
-                    MessageUtil.sendMessage(player, Messages.COMMAND_SETPAGESLOT_EMPTY_SLOT_REQUEST.replace("%slotNumber%", String.valueOf(defaultNextItemSlot)));
-                    return false;
-                }
-            }
+        if (isOccupiedByForeignItem(player, defaultNextItemSlot)) {
+            MessageUtil.sendMessage(player, Messages.COMMAND_SETPAGESLOT_EMPTY_SLOT_REQUEST.replace("%slotNumber%", String.valueOf(defaultNextItemSlot)));
+            return false;
         }
-        if (getItem(player, 9 + defaultPrevItemSlot) != null) {
-            if (!InventoryPagesPlus.nms.getCustomData(getItem(player, 9 + defaultPrevItemSlot)).equals("inventorypagespluspageitems")) {
-                if (!InventoryPagesPlus.nms.getCustomData(getItem(player, 9 + defaultPrevItemSlot)).equals(PlayerPageInventory.itemCustomData)) {
-                    MessageUtil.sendMessage(player, Messages.COMMAND_SETPAGESLOT_EMPTY_SLOT_REQUEST.replace("%slotNumber%", String.valueOf(defaultPrevItemSlot)));
-                    return false;
-                }
-            }
+        if (isOccupiedByForeignItem(player, defaultPrevItemSlot)) {
+            MessageUtil.sendMessage(player, Messages.COMMAND_SETPAGESLOT_EMPTY_SLOT_REQUEST.replace("%slotNumber%", String.valueOf(defaultPrevItemSlot)));
+            return false;
         }
 
         playerInventoryData.setNextItemPos(defaultNextItemSlot);
@@ -94,6 +86,12 @@ public class PageSlotManager {
         InventoryPagesPlus.getDatabaseManager().saveCurrentPage(player.getName());
         playerInventoryData.showPage(player.getGameMode());
         return true;
+    }
+
+    // A page slot can be reset while it is empty or while it already holds one of the plugin's page items.
+    private static boolean isOccupiedByForeignItem(Player player, int slot) {
+        ItemStack item = getItem(player, 9 + slot);
+        return item != null && !InventoryPagesPlus.nms.getCustomData(item).equalsIgnoreCase(PlayerPageInventory.itemCustomData);
     }
 
     private static ItemStack getItem(Player p, int slot) {

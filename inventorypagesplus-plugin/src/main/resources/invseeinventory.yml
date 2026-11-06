@@ -14,7 +14,7 @@
 # Please join my discord server to report bugs, giving suggestions. Thank you for supporting plugin!
 #
 #  Some useful information:
-#  * Support hex color
+#  * Support hex color: &#RRGGBB, #RRGGBB, <#RRGGBB>, {#RRGGBB}
 #  * There are 3 main types:
 #    + material:
 #      > For spigot version below 1.13, you must put number for the sections 'value:' and 'data: '

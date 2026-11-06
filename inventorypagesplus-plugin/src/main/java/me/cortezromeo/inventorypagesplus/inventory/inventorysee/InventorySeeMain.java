@@ -150,15 +150,12 @@ public class InventorySeeMain extends InventorySee {
         event.setCancelled(true);
 
         if (event.getCurrentItem() != null && event.getCurrentItem().getType() != Material.AIR) {
-            ItemStack clickedItem = event.getCurrentItem();
-            if (InventoryPagesPlus.nms.getCustomData(clickedItem).equals("next")) {
-                addPage(1);
-                setMenuItems();
-                open();
-                return;
-            }
-            if (InventoryPagesPlus.nms.getCustomData(clickedItem).equals("prev")) {
-                removePage(1);
+            String customData = InventoryPagesPlus.nms.getCustomData(event.getCurrentItem());
+            if (customData.equals("next") || customData.equals("prev")) {
+                if (customData.equals("next"))
+                    addPage(1);
+                else
+                    removePage(1);
                 setMenuItems();
                 open();
                 return;

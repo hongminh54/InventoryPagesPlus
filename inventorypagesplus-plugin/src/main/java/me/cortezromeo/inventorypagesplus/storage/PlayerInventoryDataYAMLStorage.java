@@ -59,19 +59,8 @@ public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
                 //Bukkit.getLogger().info("Loading " + playerUUID + "'s Page: " + i);
                 // số item sẽ có trong trang %page%
                 ArrayList<ItemStack> pageItems = new ArrayList<>(25);
-                for (int slotNumber = 0; slotNumber < 25; slotNumber++) {
-                    ItemStack item = null;
-                    if (storage.contains("items.main." + page + "." + slotNumber)) {
-                        if (storage.getString("items.main." + page + "." + slotNumber) != null) {
-                            try {
-                                item = StringUtil.stacksFromBase64(storage.getString("items.main." + page + "." + slotNumber))[0];
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                    pageItems.add(item);
-                }
+                for (int slotNumber = 0; slotNumber < 25; slotNumber++)
+                    pageItems.add(StringUtil.itemStackFromBase64(storage.getString("items.main." + page + "." + slotNumber)));
                 // add item vào page %page%
                 pageItemHashMap.put(page, pageItems);
             }
@@ -80,17 +69,8 @@ public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
             // load creative items
             if (storage.contains("items.creative.0")) {
                 ArrayList<ItemStack> creativeItems = new ArrayList<>();
-                for (int i = 0; i < 27; i++) {
-                    ItemStack item = null;
-                    if (storage.contains("items.creative.0." + i)) {
-                        try {
-                            item = StringUtil.stacksFromBase64(storage.getString("items.creative.0." + i))[0];
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    creativeItems.add(item);
-                }
+                for (int i = 0; i < 27; i++)
+                    creativeItems.add(StringUtil.itemStackFromBase64(storage.getString("items.creative.0." + i)));
                 data.setCreativeItems(creativeItems);
             }
 

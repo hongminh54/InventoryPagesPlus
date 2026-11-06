@@ -16,7 +16,7 @@
 #  Lưu ý:
 #  * Bạn có thể chỉnh thành '' nếu muốn tắt dòng message đó
 #    đối với list thì chỉ cần một dòng (- '') là được
-#  * Có hỗ trợ hex color
+#  * Có hỗ trợ hex color: &#RRGGBB, #RRGGBB, <#RRGGBB>, {#RRGGBB}
 #  * Nhớ thêm dấu cách vào '' thành ' ' nếu bạn cho dòng đó
 #    không có gì nhưng ý của bạn là xuống dòng
 

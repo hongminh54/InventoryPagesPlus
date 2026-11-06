@@ -371,7 +371,6 @@ public class PlayerInventory implements PlayerInventoryDatabase {
                         }
                     }
                     this.player.getInventory().setItem(slotNumber + 9, itemStack);
-                    this.player.updateInventory();
                 }
             }
             //player.sendMessage("Showing Page: " + this.page);
@@ -389,9 +388,11 @@ public class PlayerInventory implements PlayerInventoryDatabase {
                         continue;
 
                 this.player.getInventory().setItem(slotNumber + 9, InventoryPagesPlus.nms.getItemStack(this.creativeItems.get(slotNumber)));
-                this.player.updateInventory();
             }
         }
+
+        // Refresh once per page instead of once per slot, every call sends a full inventory packet.
+        this.player.updateInventory();
     }
 
     ItemStack addPageNums(ItemStack item, boolean nextPage) {
@@ -526,6 +527,19 @@ public class PlayerInventory implements PlayerInventoryDatabase {
         this.hasUsedCreative = hasUsedCreative;
     }
 
+    private void sendPickUpActionBar(ItemStack itemStack, int page, int slotNumber) {
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        String itemName = itemMeta != null && itemMeta.hasDisplayName() ? itemMeta.getDisplayName() : itemStack.getType().name();
+
+        String actionBar = Settings.ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_TEXT
+                .replace("%amount%", String.valueOf(itemStack.getAmount()))
+                .replace("%itemName%", itemName)
+                .replace("%page%", String.valueOf(page + 1))
+                .replace("%slotNumber%", String.valueOf(slotNumber));
+
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(InventoryPagesPlus.nms.addColor(actionBar)));
+    }
+
     int nextCreativeFreeSpace() {
         for (Integer i = 0; i < 27; i++) {
             if (creativeItems.get(i) == null) {
@@ -570,14 +584,8 @@ public class PlayerInventory implements PlayerInventoryDatabase {
                         this.items.put(page, pageItems);
                         if (page == this.currentPage)
                             showPage();
-                        if (Settings.ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_ENABLED) {
-                            String actionBar = Settings.ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_TEXT;
-                            actionBar = actionBar.replace("%amount%", String.valueOf(itemStack.getAmount()));
-                            actionBar = actionBar.replace("%itemName%", (itemStack.getItemMeta().hasDisplayName() ? itemStack.getItemMeta().getDisplayName() : itemStack.getType().name()));
-                            actionBar = actionBar.replace("%page%", String.valueOf(page + 1));
-                            actionBar = actionBar.replace("%slotNumber%", String.valueOf(slotNumber));
-                            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(InventoryPagesPlus.nms.addColor(actionBar)));
-                        }
+                        if (Settings.ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_ENABLED)
+                            sendPickUpActionBar(itemStack, page, slotNumber);
                         return false;
                     } else {
                         ItemStack itemFromSlot = InventoryPagesPlus.nms.getItemStack(pageItems.get(slotNumber));
@@ -589,14 +597,8 @@ public class PlayerInventory implements PlayerInventoryDatabase {
                                 this.items.put(page, pageItems);
                                 if (page == this.currentPage)
                                     showPage();
-                                if (Settings.ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_ENABLED) {
-                                    String actionBar = Settings.ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_TEXT;
-                                    actionBar = actionBar.replace("%amount%", String.valueOf(itemStack.getAmount()));
-                                    actionBar = actionBar.replace("%itemName%", (itemStack.getItemMeta().hasDisplayName() ? itemStack.getItemMeta().getDisplayName() : itemStack.getType().name()));
-                                    actionBar = actionBar.replace("%page%", String.valueOf(page + 1));
-                                    actionBar = actionBar.replace("%slotNumber%", String.valueOf(slotNumber));
-                                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(InventoryPagesPlus.nms.addColor(actionBar)));
-                                }
+                                if (Settings.ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_ENABLED)
+                                    sendPickUpActionBar(itemStack, page, slotNumber);
                                 return false;
                             }
                         }

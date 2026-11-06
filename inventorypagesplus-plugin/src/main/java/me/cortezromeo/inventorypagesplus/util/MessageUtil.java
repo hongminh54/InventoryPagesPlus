@@ -28,20 +28,17 @@ public class MessageUtil {
     }
 
     public static void sendMessage(CommandSender sender, String message) {
-        message = message.replace("%prefix%" , Messages.PREFIX);
-        sender.sendMessage(InventoryPagesPlus.nms.addColor(message));
+        sender.sendMessage(InventoryPagesPlus.nms.addColor(message.replace("%prefix%", Messages.PREFIX)));
     }
 
     public static void sendMessage(Player player, String message) {
-        if (player == null | message.equals(""))
+        if (player == null || message.isEmpty())
             return;
 
-        message = message.replace("%prefix%" , Messages.PREFIX);
+        if (InventoryPagesPlus.isPapiSupport())
+            message = PlaceholderAPI.setPlaceholders(player, message);
 
-        if (!InventoryPagesPlus.isPapiSupport())
-            player.sendMessage(InventoryPagesPlus.nms.addColor(message));
-        else
-            player.sendMessage(InventoryPagesPlus.nms.addColor(PlaceholderAPI.setPlaceholders(player, message)));
+        sendMessage((CommandSender) player, message);
     }
 
     // only use for testing plugin
