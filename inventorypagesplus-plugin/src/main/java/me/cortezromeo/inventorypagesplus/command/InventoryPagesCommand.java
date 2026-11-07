@@ -5,6 +5,7 @@ import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.file.inventory.InvseeInventoryFile;
 import me.cortezromeo.inventorypagesplus.file.inventory.InvseeOtherItemsInventoryFile;
 import me.cortezromeo.inventorypagesplus.file.inventory.PlayerInventoryFile;
+import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
 import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeCreative;
 import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeEnderChest;
 import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeMain;
@@ -54,10 +55,19 @@ public class InventoryPagesCommand implements CommandExecutor, TabExecutor {
                 PlayerInventoryFile.reload();
                 InvseeInventoryFile.reload();
                 InvseeOtherItemsInventoryFile.reload();
+                PlayerPageInventory.setupItems();
                 InventorySeeMain.setupItems();
                 InventorySeeOtherItems.setupItems();
                 InventorySeeCreative.setupItems();
                 InventorySeeEnderChest.setupItems();
+                // Rebuild the cached inventories so online players get the new page limits and switcher items.
+                // Saving first keeps every page, the reload then behaves exactly like a rejoin.
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    if (InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase().containsKey(player.getUniqueId().toString())) {
+                        InventoryPagesPlus.getDatabaseManager().savePlayerInventory(player.getName());
+                        InventoryPagesPlus.getDatabaseManager().loadPlayerInventory(player.getName());
+                    }
+                }
                 if (AutoSaveManager.isAutoSaveEnabled() && !Settings.AUTO_SAVE_ENABLED)
                     AutoSaveManager.stopAutoSave();
                 else

@@ -33,6 +33,9 @@ public interface PlayerInventoryDatabase {
 
     int getMaxPage();
 
+    // The larger of the stored max page and the permission granted one, which is what the player can actually use.
+    int getEffectiveMaxPage();
+
     void setMaxPage(int number);
 
     void addMaxPage(int number);

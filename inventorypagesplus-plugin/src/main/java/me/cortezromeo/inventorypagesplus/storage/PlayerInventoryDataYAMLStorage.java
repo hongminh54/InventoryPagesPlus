@@ -7,6 +7,7 @@ import me.cortezromeo.inventorypagesplus.manager.DebugManager;
 import me.cortezromeo.inventorypagesplus.util.FileUtil;
 import me.cortezromeo.inventorypagesplus.util.StringUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -55,14 +56,27 @@ public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
             data.setPlayerName(playerName);
             data.setPlayerUUID(playerUUID);
             // load survival items
-            for (int page = 0; page < maxPage + 1; page++) {
-                //Bukkit.getLogger().info("Loading " + playerUUID + "'s Page: " + i);
-                // số item sẽ có trong trang %page%
-                ArrayList<ItemStack> pageItems = new ArrayList<>(25);
-                for (int slotNumber = 0; slotNumber < 25; slotNumber++)
-                    pageItems.add(StringUtil.itemStackFromBase64(storage.getString("items.main." + page + "." + slotNumber)));
-                // add item vào page %page%
-                pageItemHashMap.put(page, pageItems);
+            ConfigurationSection mainSection = storage.getConfigurationSection("items.main");
+            if (mainSection != null) {
+                // Iterate the stored pages, not 0..maxPage, so pages above the stored limit survive a restart.
+                for (String pageKey : mainSection.getKeys(false)) {
+                    int page;
+                    try {
+                        page = Integer.parseInt(pageKey);
+                    } catch (NumberFormatException exception) {
+                        continue;
+                    }
+                    ArrayList<ItemStack> pageItems = new ArrayList<>(25);
+                    boolean emptyPage = true;
+                    for (int slotNumber = 0; slotNumber < 25; slotNumber++) {
+                        ItemStack itemStack = StringUtil.itemStackFromBase64(storage.getString("items.main." + page + "." + slotNumber));
+                        if (itemStack != null)
+                            emptyPage = false;
+                        pageItems.add(itemStack);
+                    }
+                    if (!emptyPage)
+                        pageItemHashMap.put(page, pageItems);
+                }
             }
             data.setItems(pageItemHashMap);
 

@@ -98,7 +98,8 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
                 // load survival items
                 Gson gson = new Gson();
                 HashMap<Integer, ArrayList<String>> pageItemsBase64 = gson.fromJson(resultSet.getString("ITEMS"), new TypeToken<HashMap<Integer, ArrayList<String>>>(){}.getType());
-                for (int page = 0; page < maxPage + 1; page++) {
+                // Iterate the stored pages, not 0..maxPage, so pages above the stored limit survive a restart.
+                for (Integer page : pageItemsBase64.keySet()) {
                     if (pageItemsBase64.get(page) == null)
                         continue;
                     else {

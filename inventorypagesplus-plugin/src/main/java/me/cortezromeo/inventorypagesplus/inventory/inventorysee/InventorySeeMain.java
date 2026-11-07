@@ -4,6 +4,7 @@ import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.file.inventory.InvseeInventoryFile;
 import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
+import me.cortezromeo.inventorypagesplus.manager.PageLimitManager;
 import me.cortezromeo.inventorypagesplus.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -176,7 +177,7 @@ public class InventorySeeMain extends InventorySee {
             inventory.setItem(prevItemSlot, getPageItemStack(prevItem, false));
         }
 
-        if (getPage() == getTargetInventoryDatabase().getMaxPage()) {
+        if (getPage() == getTargetInventoryDatabase().getEffectiveMaxPage()) {
             inventory.setItem(nextItemSlot, getPageItemStack(noPageItem, false));
         } else {
             inventory.setItem(nextItemSlot, getPageItemStack(nextItem, true));
@@ -201,7 +202,7 @@ public class InventorySeeMain extends InventorySee {
         itemLore.replaceAll(string -> string
                 .replace("%usedSlots%", (nextPage ? String.valueOf(getUsedSlot(getPage() + 1)) : String.valueOf(getUsedSlot(getPage() - 1))))
                 .replace("%currentPage%", String.valueOf(currentPageUser))
-                .replace("%maxPage%", String.valueOf(getTargetInventoryDatabase().getMaxPage() + 1)));
+                .replace("%maxPage%", PageLimitManager.formatMaxPage(getTargetInventoryDatabase().getEffectiveMaxPage())));
         itemMeta.setLore(itemLore);
         modItem.setItemMeta(itemMeta);
         return modItem;

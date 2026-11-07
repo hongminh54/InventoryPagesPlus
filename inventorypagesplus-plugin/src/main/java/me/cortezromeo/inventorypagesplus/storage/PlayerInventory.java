@@ -4,6 +4,7 @@ import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
 import me.cortezromeo.inventorypagesplus.language.Messages;
+import me.cortezromeo.inventorypagesplus.manager.PageLimitManager;
 import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -13,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -22,6 +24,7 @@ public class PlayerInventory implements PlayerInventoryDatabase {
     private String playerUUID;
     private ItemStack prevItem, nextItem, noPageItem;
     private Integer currentPage = 0, maxPage = 1, prevItemPos, nextItemPos;
+    private int permissionMaxPage;
     private Boolean hasUsedCreative = false;
     private HashMap<Integer, ArrayList<ItemStack>> items = new HashMap<>();
     private ArrayList<ItemStack> creativeItems = new ArrayList<>(27);
@@ -31,18 +34,13 @@ public class PlayerInventory implements PlayerInventoryDatabase {
         this.playerName = playerName;
         this.playerUUID = playerUUID;
         this.maxPage = maxPage;
+        // Resolved before the pick up loop below, which already needs the effective limit.
+        this.permissionMaxPage = PageLimitManager.getPermissionMaxPage(player);
         this.prevItem = prevItem;
         this.prevItemPos = prevPos;
         this.nextItem = nextItem;
         this.nextItemPos = nextPos;
         this.noPageItem = noPageItem;
-
-        // create pages
-        for (int page = 0; page < maxPage + 1; page++) {
-            if (!pageExists(page)) {
-                createPage(page);
-            }
-        }
 
         // initialize creative inventory
         for (int i = 0; i < 27; i++) {
@@ -54,6 +52,11 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
         if (creativeItems != null)
             this.setCreativeItems(creativeItems);
+
+        // Pages are created on demand, only the first one is guaranteed to exist.
+        // This runs after setItems because that call replaces the whole page map.
+        if (!pageExists(0))
+            createPage(0);
 
         if (player != null) {
             boolean droppedItem = false;
@@ -103,6 +106,11 @@ public class PlayerInventory implements PlayerInventoryDatabase {
     @Override
     public int getMaxPage() {
         return this.maxPage;
+    }
+
+    @Override
+    public int getEffectiveMaxPage() {
+        return Math.max(this.maxPage, this.permissionMaxPage);
     }
 
     @Override
@@ -248,7 +256,7 @@ public class PlayerInventory implements PlayerInventoryDatabase {
                 player.getInventory().setBoots(null);
                 player.updateInventory();
             }
-            for (int page = 0; page < this.maxPage + 1; page++) {
+            for (Integer page : this.items.keySet()) {
                 clearPage(page, gm);
             }
         } else {
@@ -295,7 +303,7 @@ public class PlayerInventory implements PlayerInventoryDatabase {
     @Override
     public void dropAllPages(GameMode gm) {
         if (gm != GameMode.CREATIVE) {
-            for (int page = 0; page < this.maxPage + 1; page++) {
+            for (Integer page : this.items.keySet()) {
                 dropPage(page, gm);
             }
         } else {
@@ -323,14 +331,11 @@ public class PlayerInventory implements PlayerInventoryDatabase {
         if (this.player == null)
             return;
 
-        if (!pageExists(page))
-            createPage(page);
-
-        if (page > maxPage) {
-            this.currentPage = maxPage;
-        } else {
-            this.currentPage = page;
-        }
+        int effectiveMaxPage = getEffectiveMaxPage();
+        // Clamp before creating, otherwise a page above the limit would be created for nothing.
+        this.currentPage = Math.min(page, effectiveMaxPage);
+        if (!pageExists(this.currentPage))
+            createPage(this.currentPage);
         //player.sendMessage("GameMode: " + gm);
         if (gm != GameMode.CREATIVE) {
             boolean foundPrev = false;
@@ -351,7 +356,7 @@ public class PlayerInventory implements PlayerInventoryDatabase {
                     }
                     foundPrev = true;
                 } else if (slotNumber == nextItemPos) {
-                    if (this.currentPage == maxPage) {
+                    if (this.currentPage == effectiveMaxPage) {
                         this.player.getInventory().setItem(slotNumber + 9, addPageNums(noPageItem, false));
                     } else {
                         this.player.getInventory().setItem(slotNumber + 9, addPageNums(nextItem, true));
@@ -376,7 +381,7 @@ public class PlayerInventory implements PlayerInventoryDatabase {
             //player.sendMessage("Showing Page: " + this.page);
         } else {
             if (!Settings.INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY) {
-                showPage(page, GameMode.SURVIVAL);
+                showPage(this.currentPage, GameMode.SURVIVAL);
                 return;
             }
             this.hasUsedCreative = true;
@@ -413,7 +418,7 @@ public class PlayerInventory implements PlayerInventoryDatabase {
             itemLore.replaceAll(string -> string
                     .replace("%usedSlots%", (nextPage ? String.valueOf(getUsedSlot(currentPage + 1)) : String.valueOf(getUsedSlot(currentPage - 1))))
                     .replace("%currentPage%", String.valueOf(currentPageUser))
-                    .replace("%maxPage%", String.valueOf(maxPage + 1)));
+                    .replace("%maxPage%", PageLimitManager.formatMaxPage(getEffectiveMaxPage())));
             itemMeta.setLore(itemLore);
         }
 
@@ -448,6 +453,8 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
     @Override
     public void prevPage() {
+        // Re-resolve so a rank granted or lost while online applies without relogging.
+        this.permissionMaxPage = PageLimitManager.getPermissionMaxPage(this.player);
         if (this.currentPage > 0) {
             this.saveCurrentPage();
             this.currentPage = this.currentPage - 1;
@@ -458,9 +465,18 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
     @Override
     public void nextPage() {
-        if (this.currentPage < maxPage) {
+        this.permissionMaxPage = PageLimitManager.getPermissionMaxPage(this.player);
+        int effectiveMaxPage = getEffectiveMaxPage();
+        if (this.currentPage > effectiveMaxPage) {
+            // Keep the items of the page the player just lost access to before clamping back.
+            this.saveCurrentPage();
+            this.showPage();
+            return;
+        }
+        if (this.currentPage < effectiveMaxPage) {
             this.saveCurrentPage();
             this.currentPage = this.currentPage + 1;
+            // showPage creates the page on demand, which is what makes unlimited pages possible.
             this.showPage();
             this.saveCurrentPage();
         }
@@ -574,11 +590,15 @@ public class PlayerInventory implements PlayerInventoryDatabase {
             }
         }
         if (gameMode != GameMode.CREATIVE) {
-            for (int page = 0; page < maxPage + 1; page++) {
+            int effectiveMaxPage = getEffectiveMaxPage();
+            // The page map is unordered, so the highest existing page bounds the search instead of the limit.
+            // One page past it may be opened lazily when every existing page is full.
+            int highestPage = this.items.isEmpty() ? -1 : Collections.max(this.items.keySet());
+            for (int page = 0; page <= highestPage + 1 && page <= effectiveMaxPage; page++) {
                 if (page == this.currentPage)
                     saveCurrentPage();
                 ArrayList<ItemStack> pageItems = getItems(page);
-                for (int slotNumber = 0; slotNumber < 24; slotNumber++) {
+                for (int slotNumber = 0; slotNumber < 25; slotNumber++) {
                     if (pageItems.get(slotNumber) == null) {
                         pageItems.set(slotNumber, itemStack);
                         this.items.put(page, pageItems);

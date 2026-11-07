@@ -48,7 +48,7 @@ database:
 #         3. file name must be: messages_<your locale>.yml
 #         4. After you're done editing your message file, go back to config.yml and change "locale" to <your locale>
 # Default languages available: en, vi
-locale: en
+locale: vi
 
 auto-save:
   enabled: true
@@ -88,7 +88,7 @@ inventory-settings:
   # If this is enabled, plugin will show creative inventory database whenever player's mode changes to creative.
   # Otherwise, plugin will only use survival inventory database for all game modes.
   # PLEASE don't use reload command, please restart server after changing this option.
-  use-creative-inventory: true
+  use-creative-inventory: false
   # These slots below won't be saved and loaded.
   # Player cannot use these slots for setting up the previous and next page items position.
   # Please do not set the default previous and next page item position to any of these slots.
@@ -97,6 +97,34 @@ inventory-settings:
   # Set only -1 to disable
   skip-slots:
     - -1
+
+# Permission based page limits.
+# Node format: inventorypagesplus.slotpage.<suffix>
+#   - A number suffix (inventorypagesplus.slotpage.5) grants 5 total pages.
+#   - A rank suffix (inventorypagesplus.slotpage.vip) looks up that rank in "ranks" below.
+# Players with inventorypagesplus.admin (or * / OP) have unlimited pages.
+# The limit that applies is the LARGER of the permission one and the player's stored database value,
+# so items are never lost when a rank expires.
+page-permissions:
+  # Default TOTAL pages for players without any slotpage permission (1 based: 3 means 3 pages).
+  # "inventory-settings.max-page-default" still seeds the DATABASE value of brand new players
+  # (legacy, 0 based). The larger of the two wins.
+  default-max-page: 3
+  # Text shown for %maxPage% and %totalpages% when the player has unlimited pages.
+  unlimited-label: '&#55ff00∞'
+  # Rank nodes: inventorypagesplus.slotpage.<key>
+  # "max-page" is the TOTAL pages this rank grants (1 based).
+  # "priority": the higher number wins when a player holds several ranks, and any rank overrides number nodes.
+  ranks:
+    vip:
+      max-page: 5
+      priority: 1
+    premium:
+      max-page: 6
+      priority: 2
+    ultimate:
+      max-page: 7
+      priority: 3
 
 # Automatically move items to the next page if player's current page is full.
 # However, Bukkit API does not let me execute the event when player's inventory is full.

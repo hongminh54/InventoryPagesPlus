@@ -2,6 +2,7 @@ package me.cortezromeo.inventorypagesplus.inventory.inventorysee;
 
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.inventory.CustomInventoryBase;
+import me.cortezromeo.inventorypagesplus.manager.PageLimitManager;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -80,7 +81,7 @@ public abstract class InventorySee extends CustomInventoryBase {
         List<String> itemLores = modItem.getItemMeta().getLore();
         for (int itemLore = 0; itemLore < itemLores.size(); itemLore++) {
             String lore = itemLores.get(itemLore).replace("%player%", getTargetInventoryDatabase().getPlayerName());
-            lore = lore.replace("%totalpages%", String.valueOf(getTargetInventoryDatabase().getMaxPage()))
+            lore = lore.replace("%totalpages%", PageLimitManager.formatMaxPage(getTargetInventoryDatabase().getEffectiveMaxPage()))
                     .replace("%currentviewingpage%", String.valueOf(getTargetInventoryDatabase().getCurrentPage()))
                     .replace("%creativeusedslots%", String.valueOf(getTargetInventoryDatabase().getUsedSlotCreative()))
                     .replace("%enderchestusedslots%", String.valueOf(getUsedSlotEnderChest()))

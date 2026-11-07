@@ -31,6 +31,8 @@ public class Settings {
     public static boolean INVENTORY_SETTINGS_KEEP_INVENTORY;
     public static boolean INVENTORY_SETTINGS_KEEP_LEVEL;
     public static boolean INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY;
+    public static int PAGE_PERMISSIONS_DEFAULT_MAX_PAGE;
+    public static String PAGE_PERMISSIONS_UNLIMITED_LABEL;
     public static boolean ADVANCED_PICK_UP_SETTINGS_ENABLED;
     public static boolean ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_ENABLED;
     public static String ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_TEXT;
@@ -68,6 +70,8 @@ public class Settings {
         INVENTORY_SETTINGS_KEEP_INVENTORY = configuration.getBoolean("inventory-settings.keep-inventory");
         INVENTORY_SETTINGS_KEEP_LEVEL = configuration.getBoolean("inventory-settings.keep-level");
         INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY = configuration.getBoolean("inventory-settings.use-creative-inventory");
+        PAGE_PERMISSIONS_DEFAULT_MAX_PAGE = configuration.getInt("page-permissions.default-max-page");
+        PAGE_PERMISSIONS_UNLIMITED_LABEL = configuration.getString("page-permissions.unlimited-label");
         ADVANCED_PICK_UP_SETTINGS_ENABLED = configuration.getBoolean("advanced-pick-up-settings.enabled");
         ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_ENABLED = configuration.getBoolean("advanced-pick-up-settings.action-bar.enabled");
         ADVANCED_PICK_UP_SETTINGS_ACTIONBAR_TEXT = configuration.getString("advanced-pick-up-settings.action-bar.text");
