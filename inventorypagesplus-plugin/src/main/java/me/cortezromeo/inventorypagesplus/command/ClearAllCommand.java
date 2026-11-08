@@ -64,15 +64,15 @@ public class ClearAllCommand implements CommandExecutor, TabExecutor {
                         if (!InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase().containsKey(targetUUID)) {
                             InventoryPagesPlus.getDatabaseManager().loadPlayerInventory(targetName);
                             InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(targetName).clearAllPages(GameMode.SURVIVAL);
-                            MessageUtil.sendMessage(sender, Messages.COMMAND_CLEAR_CLEAR_ALL_TARGET.replace("%player%", targetName));                        }
+                            MessageUtil.sendMessage(sender, Messages.COMMAND_CLEAR_CLEAR_ALL_TARGET.replace("%player%", targetName));
+                        }
                     });
                 }
             }
             return false;
         }
 
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
+        if (sender instanceof Player player) {
 
             if (!player.hasPermission("inventorypagesplus.clearall") && !sender.hasPermission("inventorypagesplus.admin")) {
                 MessageUtil.sendMessage(player, Messages.NO_PERMISSION);

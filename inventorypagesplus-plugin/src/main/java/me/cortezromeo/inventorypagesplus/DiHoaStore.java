@@ -11,12 +11,13 @@ import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 // for selling plugin at dihoastore.net
 public class DiHoaStore {
-    private static String productName = "InventoryPagesPlus";
+    private static final String productName = "InventoryPagesPlus";
 
     public static boolean doDiHoa() {
         MessageUtil.log("&f--------------------------------");
@@ -70,7 +71,7 @@ public class DiHoaStore {
             if (getIpaddress() == null)
                 return false;
             String query = key + "!K04!" + getIpaddress();
-            HttpURLConnection connection = (HttpURLConnection)(new URL("https://dihoastore-mc.tk/api/api.php?query=" + getMd5(query) + "&plugin=" + productName + "&license=" + key + "&ip=" + getIpaddress())).openConnection();
+            HttpURLConnection connection = (HttpURLConnection) (new URL("https://dihoastore-mc.tk/api/api.php?query=" + getMd5(query) + "&plugin=" + productName + "&license=" + key + "&ip=" + getIpaddress())).openConnection();
             connection.setDoOutput(true);
             connection.setDoInput(true);
             connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11");
@@ -78,7 +79,7 @@ public class DiHoaStore {
             connection.setAllowUserInteraction(false);
             connection.setConnectTimeout(2000);
             connection.connect();
-            BufferedReader stream = new BufferedReader(new InputStreamReader(connection.getInputStream(), Charset.forName("UTF-8")));
+            BufferedReader stream = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             String inputLine;
             while ((inputLine = stream.readLine()) != null)
@@ -88,19 +89,17 @@ public class DiHoaStore {
             String json = sb.toString().replace(" ", "");
             if (json != null) {
                 JSONParser parser = new JSONParser();
-                JSONObject object = (JSONObject)parser.parse(json);
+                JSONObject object = (JSONObject) parser.parse(json);
                 if (object.get("error").toString().equals("yes"))
                     return false;
                 if (object.get("error").toString().equals("no")) {
-                    if (object.get("status").toString() == "online")
-                        return false;
-                    return true;
+                    return object.get("status").toString() != "online";
                 }
                 return false;
             }
             MessageUtil.log("&e[DIHOASTORE&f-&cInventoryPagesPlus&e] §fLooks like the product key is working. Please visit our website and go to purchased plugin then click to reset key then reload this plugin!");
             return false;
-        } catch (IOException|org.json.simple.parser.ParseException e) {
+        } catch (IOException | org.json.simple.parser.ParseException e) {
             MessageUtil.log("&e[DIHOASTORE&f-&cInventoryPagesPlus&e] License key đã hoạt dộng, nhưng có vẻ như nó đang được sử dụng trong một máy chủ khác. Nếu bạn đã mua và sử dụng plugin InventoryPagesPlus trên nhiều máy chủ, vui lòng liên hệ discord &bcortez_romeo&e để mình đưa bản custom xài được trên đa máy chủ. Nếu bạn sử dụng plugin cho rieng một máy chủ duy nhất, vui lòng vào &bhttps://dihoastore.net/account/index.php&e và nhấn vào nút &bRESET KEY&e để lấy key mới, sau đó nhập key mới vào lại config.yml");
             return false;
         } catch (Exception e) {
@@ -124,20 +123,16 @@ public class DiHoaStore {
             String json = sb.toString().replace(" ", "");
             if (json != null) {
                 JSONParser parser = new JSONParser();
-                JSONObject object = (JSONObject)parser.parse(json);
+                JSONObject object = (JSONObject) parser.parse(json);
                 if (object.get("error").toString().equals("yes"))
                     return false;
                 if (action.equals("enable")) {
-                    if (object.get("status").toString().equals("offline"))
-                        return true;
-                    return false;
+                    return object.get("status").toString().equals("offline");
                 }
-                if (object.get("status").toString().equals("online"))
-                    return true;
-                return false;
+                return object.get("status").toString().equals("online");
             }
             return false;
-        } catch (IOException|org.json.simple.parser.ParseException e) {
+        } catch (IOException | org.json.simple.parser.ParseException e) {
             MessageUtil.log("&e[DIHOASTORE&f-&cInventoryPagesPlus&e] License key đã hoạt dộng, nhưng có vẻ như nó đang được sử dụng trong một máy chủ khác. Nếu bạn đã mua và sử dụng plugin InventoryPagesPlus trên nhiều máy chủ, vui lòng liên hệ discord &bcortez_romeo&e để mình đưa bản custom xài được trên đa máy chủ. Nếu bạn sử dụng plugin cho rieng một máy chủ duy nhất, vui lòng vào &bhttps://dihoastore.net/account/index.php&e và nhấn vào nút &bRESET KEY&e để lấy key mới, sau đó nhập key mới vào lại config.yml");
             return false;
         }

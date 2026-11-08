@@ -94,8 +94,7 @@ public class InventorySeeOtherItems extends InventorySee {
         if (super.inventory == null || !getInventory().getViewers().contains(getOwner())) {
             super.open();
             addTargetItems();
-        }
-        else {
+        } else {
             addTargetItems();
             //setMenuItems();
             getOwner().updateInventory();

@@ -25,9 +25,8 @@ public class EntityPickupListener implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void onPickup(EntityPickupItemEvent event) {
         Entity entity = event.getEntity();
-        if (entity instanceof Player) {
+        if (entity instanceof Player player) {
             ItemStack item = event.getItem().getItemStack();
-            Player player = (Player) entity;
 
             if (InventoryPagesPlus.nms.getCustomData(item).equals(PlayerPageInventory.itemCustomData)) {
                 event.setCancelled(true);

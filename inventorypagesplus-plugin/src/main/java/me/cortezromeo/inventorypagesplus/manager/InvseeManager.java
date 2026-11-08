@@ -13,7 +13,7 @@ import java.util.HashMap;
 
 public class InvseeManager {
 
-    private static HashMap<Player, String> invseeOfflineTargetUUIDQueue = new HashMap<>();
+    private static final HashMap<Player, String> invseeOfflineTargetUUIDQueue = new HashMap<>();
 
     public static void openInventorySee(Player player, String targetName, boolean editMode) {
         Player target = Bukkit.getPlayer(targetName);
@@ -45,13 +45,11 @@ public class InvseeManager {
                         public void run() {
                             if (!invseeOfflineTargetUUIDQueue.containsKey(player)) {
                                 cancel();
-                                return;
                             } else {
                                 if (!invseeOfflineTargetUUIDQueue.get(player).equals("/.")) {
                                     new InventorySeeMain(player, targetName, invseeOfflineTargetUUIDQueue.get(player), 0).open();
                                     invseeOfflineTargetUUIDQueue.remove(player);
                                     cancel();
-                                    return;
                                 }
                             }
                         }
@@ -59,7 +57,6 @@ public class InvseeManager {
                 }
             } else {
                 MessageUtil.sendMessage(player, Messages.COMMAND_INVSEE_NO_OFFLINE_INVSEE_PERMISSION);
-                return;
             }
         }
     }

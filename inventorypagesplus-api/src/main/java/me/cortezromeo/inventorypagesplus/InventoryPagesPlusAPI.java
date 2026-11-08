@@ -6,6 +6,7 @@ import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 public interface InventoryPagesPlusAPI {
 
     PlayerInventoryDatabase getPlayerInventoryDatabase();
+
     InventoryPagesPlusDataManager getInventoryPagesPlusDataManager();
 
 }

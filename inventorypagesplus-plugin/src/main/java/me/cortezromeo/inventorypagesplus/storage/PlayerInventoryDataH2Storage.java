@@ -66,12 +66,39 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
         return connection;
     }
 
+    private static boolean hasDataUUID(String playerUUID) {
+        String query = "select * from " + table + " where UUID=?";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, playerUUID);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return true;
+            }
+            rs.close();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+        return false;
+    }
+
+    private static void initData(String playerUUID) {
+        ArrayList<String> queries = new ArrayList<>();
+        queries.add("INSERT INTO " + table + " (UUID, PLAYERNAME, ITEMS, CREATIVEITEMS, MAXPAGE, PAGE, PREVITEMPOS, NEXTITEMPOS, PROTECTIONPIN, PROTECTIONATTEMPTS, PROTECTIONBANUNTIL) values('" + playerUUID + "', '', '', '', 0, 0, '', '', null, 0, 0)");
+        queries.forEach(cmd -> {
+            try (PreparedStatement ps = connection.prepareStatement(cmd)) {
+                ps.execute();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     public PlayerInventoryDatabase fromH2(String playerName, String playerUUID) {
         HashMap<Integer, ArrayList<ItemStack>> pageItemHashMap = new HashMap<>();
         int maxPageDefault = Settings.INVENTORY_SETTINGS_MAX_PAGE_DEFAULT;
         if (maxPageDefault < 0)
             maxPageDefault = 0;
-        PlayerInventoryDatabase data = new PlayerInventory(Bukkit.getPlayer(playerName), playerName, playerUUID, maxPageDefault,null, null, PlayerPageInventory.prevItem, PlayerPageInventory.prevPos, PlayerPageInventory.nextItem, PlayerPageInventory.nextPos, PlayerPageInventory.noPageItem);
+        PlayerInventoryDatabase data = new PlayerInventory(Bukkit.getPlayer(playerName), playerName, playerUUID, maxPageDefault, null, null, PlayerPageInventory.prevItem, PlayerPageInventory.prevPos, PlayerPageInventory.nextItem, PlayerPageInventory.nextPos, PlayerPageInventory.noPageItem);
 
         if (!hasDataUUID(playerUUID))
             return data;
@@ -97,7 +124,8 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
 
                 // load survival items
                 Gson gson = new Gson();
-                HashMap<Integer, ArrayList<String>> pageItemsBase64 = gson.fromJson(resultSet.getString("ITEMS"), new TypeToken<HashMap<Integer, ArrayList<String>>>(){}.getType());
+                HashMap<Integer, ArrayList<String>> pageItemsBase64 = gson.fromJson(resultSet.getString("ITEMS"), new TypeToken<HashMap<Integer, ArrayList<String>>>() {
+                }.getType());
                 // Iterate the stored pages, not 0..maxPage, so pages above the stored limit survive a restart.
                 for (Integer page : pageItemsBase64.keySet()) {
                     if (pageItemsBase64.get(page) == null)
@@ -119,7 +147,8 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
 
                 // load creative items
                 if (creativeItemsString != null) {
-                    ArrayList<String> creativeItemsBase64 = gson.fromJson(creativeItemsString, new TypeToken<ArrayList<String>>(){}.getType());
+                    ArrayList<String> creativeItemsBase64 = gson.fromJson(creativeItemsString, new TypeToken<ArrayList<String>>() {
+                    }.getType());
                     ArrayList<ItemStack> creativeItemsItemStack = new ArrayList<>();
                     for (String base64Item : creativeItemsBase64)
                         creativeItemsItemStack.add(StringUtil.itemStackFromBase64(base64Item));
@@ -133,8 +162,7 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
             }
             data.setPlayerName(playerName);
             data.setPlayerUUID(playerUUID);
-        }
-        catch (Exception exception) {
+        } catch (Exception exception) {
             exception.printStackTrace();
         }
         return data;
@@ -143,7 +171,7 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
     @Override
     public boolean hasDataPlayerName(String playerName) {
         String query = "select * from " + table + " where PLAYERNAME=?";
-        try (PreparedStatement ps = connection.prepareStatement(query)){
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, playerName);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -154,34 +182,6 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
             exception.printStackTrace();
         }
         return false;
-    }
-
-    private static boolean hasDataUUID(String playerUUID) {
-        String query = "select * from " + table + " where UUID=?";
-        try (PreparedStatement ps = connection.prepareStatement(query)){
-            ps.setString(1, playerUUID);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return true;
-            }
-            rs.close();
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        return false;
-    }
-
-    private static void initData(String playerUUID) {
-        ArrayList<String> queries = new ArrayList<>();
-        queries.add("INSERT INTO " + table + " (UUID, PLAYERNAME, ITEMS, CREATIVEITEMS, MAXPAGE, PAGE, PREVITEMPOS, NEXTITEMPOS, PROTECTIONPIN, PROTECTIONATTEMPTS, PROTECTIONBANUNTIL) values('" + playerUUID + "', '', '', '', 0, 0, '', '', null, 0, 0)");
-        queries.forEach(cmd -> {
-            try (PreparedStatement ps = connection.prepareStatement(cmd)) {
-                ps.execute();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
     }
 
     @Override
@@ -214,7 +214,7 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
             }
             rs.close();
             return UUID;
-        } catch ( Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;

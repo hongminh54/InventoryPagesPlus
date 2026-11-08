@@ -17,7 +17,7 @@ public class InventoryClickListener implements Listener {
         DebugManager.debug("LOADING EVENT", "Loaded InventoryClickEvent.");
     }
 
-    @EventHandler (ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getClickedInventory() == null)
             return;

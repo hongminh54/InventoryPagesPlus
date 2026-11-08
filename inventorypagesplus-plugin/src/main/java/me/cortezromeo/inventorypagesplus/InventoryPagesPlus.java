@@ -1,34 +1,34 @@
-  package me.cortezromeo.inventorypagesplus;
+package me.cortezromeo.inventorypagesplus;
 
-  import com.tchristofferson.configupdater.ConfigUpdater;
-  import me.cortezromeo.inventorypagesplus.command.*;
-  import me.cortezromeo.inventorypagesplus.enums.DatabaseType;
-  import me.cortezromeo.inventorypagesplus.file.inventory.*;
-  import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
-  import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeCreative;
-  import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeEnderChest;
-  import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeMain;
-  import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeOtherItems;
-  import me.cortezromeo.inventorypagesplus.language.English;
-  import me.cortezromeo.inventorypagesplus.language.Messages;
-  import me.cortezromeo.inventorypagesplus.language.Vietnamese;
-  import me.cortezromeo.inventorypagesplus.listener.*;
-  import me.cortezromeo.inventorypagesplus.manager.AutoSaveManager;
-  import me.cortezromeo.inventorypagesplus.manager.DatabaseManager;
-  import me.cortezromeo.inventorypagesplus.manager.DebugManager;
-  import me.cortezromeo.inventorypagesplus.manager.InventoryPagesPlusDataManager;
-  import me.cortezromeo.inventorypagesplus.server.VersionSupport;
-  import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDataStorage;
-  import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
-  import me.cortezromeo.inventorypagesplus.support.PAPISupport;
-  import me.cortezromeo.inventorypagesplus.util.MessageUtil;
-  import me.cortezromeo.support.version.cross.CrossVersionSupport;
-  import org.bukkit.Bukkit;
-  import org.bukkit.entity.Player;
-  import org.bukkit.plugin.java.JavaPlugin;
+import com.tchristofferson.configupdater.ConfigUpdater;
+import me.cortezromeo.inventorypagesplus.command.*;
+import me.cortezromeo.inventorypagesplus.enums.DatabaseType;
+import me.cortezromeo.inventorypagesplus.file.inventory.*;
+import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
+import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeCreative;
+import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeEnderChest;
+import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeMain;
+import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeOtherItems;
+import me.cortezromeo.inventorypagesplus.language.English;
+import me.cortezromeo.inventorypagesplus.language.Messages;
+import me.cortezromeo.inventorypagesplus.language.Vietnamese;
+import me.cortezromeo.inventorypagesplus.listener.*;
+import me.cortezromeo.inventorypagesplus.manager.AutoSaveManager;
+import me.cortezromeo.inventorypagesplus.manager.DatabaseManager;
+import me.cortezromeo.inventorypagesplus.manager.DebugManager;
+import me.cortezromeo.inventorypagesplus.manager.InventoryPagesPlusDataManager;
+import me.cortezromeo.inventorypagesplus.server.VersionSupport;
+import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDataStorage;
+import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
+import me.cortezromeo.inventorypagesplus.support.PAPISupport;
+import me.cortezromeo.inventorypagesplus.util.MessageUtil;
+import me.cortezromeo.support.version.cross.CrossVersionSupport;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
-  import java.io.File;
-  import java.io.IOException;
+import java.io.File;
+import java.io.IOException;
 
 public final class InventoryPagesPlus extends JavaPlugin {
 
@@ -37,6 +37,14 @@ public final class InventoryPagesPlus extends JavaPlugin {
     public static DatabaseType databaseType;
     private static boolean papiSupport = false;
     private static InventoryPagesPlusDataManager databaseManager;
+
+    public static InventoryPagesPlusDataManager getDatabaseManager() {
+        return databaseManager;
+    }
+
+    public static boolean isPapiSupport() {
+        return papiSupport;
+    }
 
     @Override
     public void onLoad() {
@@ -267,14 +275,6 @@ public final class InventoryPagesPlus extends JavaPlugin {
             new PAPISupport().register();
             papiSupport = true;
         }
-    }
-
-    public static InventoryPagesPlusDataManager getDatabaseManager() {
-        return databaseManager;
-    }
-
-    public static boolean isPapiSupport() {
-        return papiSupport;
     }
 
     @Override

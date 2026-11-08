@@ -28,11 +28,10 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             MessageUtil.sendMessage(sender, Messages.NON_CONSOLE_COMMAND);
             return false;
         }
-        Player player = (Player) sender;
 
         if (!Settings.PROTECTION_ENABLED) {
             MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_DISABLED);

@@ -10,11 +10,11 @@ import java.io.File;
 
 public class PlayerInventoryDataStorage {
 
-    private static PlayerInventoryStorage STORAGE;
     public static String mySQLDatabaseName;
     public static String mySQLTableName;
     public static String mySQLUserName;
     public static String mySQLUserPassword;
+    private static PlayerInventoryStorage STORAGE;
 
     public static void init(DatabaseType databaseType) {
         File file = new File(InventoryPagesPlus.plugin.getDataFolder() + "/database/");

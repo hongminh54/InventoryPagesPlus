@@ -5,8 +5,8 @@ import me.cortezromeo.inventorypagesplus.task.AutoSaveTask;
 
 public class AutoSaveManager {
 
-    private static AutoSaveTask autoSaveTask;
     public static boolean autoSaveEnabled = false;
+    private static AutoSaveTask autoSaveTask;
 
     public static void startAutoSave(int time) {
         if (Settings.AUTO_SAVE_ENABLED && autoSaveEnabled && autoSaveTask != null)

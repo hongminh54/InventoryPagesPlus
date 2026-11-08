@@ -108,8 +108,7 @@ public class InventorySeeMain extends InventorySee {
         if (super.inventory == null || !getInventory().getViewers().contains(getOwner())) {
             super.open();
             addTargetItems();
-        }
-        else {
+        } else {
             addTargetItems();
             getOwner().updateInventory();
         }
@@ -194,7 +193,7 @@ public class InventorySeeMain extends InventorySee {
         int currentPageUser = getPage() + 1;
 
         String displayName = itemMeta.getDisplayName();
-        displayName = displayName.replace("%previousPageNumber%", String.valueOf(currentPageUser- 1))
+        displayName = displayName.replace("%previousPageNumber%", String.valueOf(currentPageUser - 1))
                 .replace("%nextPageNumber%", String.valueOf(currentPageUser + 1));
         itemMeta.setDisplayName(displayName);
 

@@ -5,11 +5,7 @@ import com.cryptomorin.xseries.XSound;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.cortezromeo.inventorypagesplus.server.VersionSupport;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -166,10 +162,9 @@ public class CrossVersionSupport extends VersionSupport {
     private ItemStack createHead(PlayerProfile profile) {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta itemMeta = head.getItemMeta();
-        if (!(itemMeta instanceof SkullMeta))
+        if (!(itemMeta instanceof SkullMeta skullMeta))
             return head;
 
-        SkullMeta skullMeta = (SkullMeta) itemMeta;
         skullMeta.setOwnerProfile(profile);
         head.setItemMeta(skullMeta);
         return head;

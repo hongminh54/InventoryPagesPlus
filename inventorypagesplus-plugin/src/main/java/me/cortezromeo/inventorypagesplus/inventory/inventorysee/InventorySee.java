@@ -41,16 +41,16 @@ public abstract class InventorySee extends CustomInventoryBase {
         return page;
     }
 
+    public void setPage(int page) {
+        this.page = page;
+    }
+
     public void addPage(int page) {
         this.page = this.page + 1;
     }
 
     public void removePage(int page) {
         this.page = this.page - 1;
-    }
-
-    public void setPage(int page) {
-        this.page = page;
     }
 
     @Override

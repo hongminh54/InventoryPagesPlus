@@ -27,8 +27,7 @@ public class SetPageSlotCommand implements CommandExecutor, TabExecutor {
     // to get the slot from player's inventory, add 9 (doing this for not including the hotbar)
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
+        if (sender instanceof Player player) {
 
             if (!player.hasPermission("inventorypagesplus.setpageslot") && !sender.hasPermission("inventorypagesplus.admin")) {
                 MessageUtil.sendMessage(player, Messages.NO_PERMISSION);

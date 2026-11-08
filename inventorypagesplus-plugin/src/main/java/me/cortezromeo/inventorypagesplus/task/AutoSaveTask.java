@@ -7,7 +7,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 public class AutoSaveTask implements Runnable {
 
-    private BukkitTask task;
+    private final BukkitTask task;
 
     public AutoSaveTask(int time) {
         this.task = Bukkit.getScheduler().runTaskTimerAsynchronously(InventoryPagesPlus.plugin, this, 20L * time, 20L * time);

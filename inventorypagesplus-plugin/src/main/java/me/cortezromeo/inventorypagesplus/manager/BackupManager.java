@@ -21,15 +21,15 @@ import java.util.zip.ZipOutputStream;
 
 public class BackupManager {
 
+    private final String backupPath = InventoryPagesPlus.plugin.getDataFolder() + "\\backup\\";
     private String backupFileName;
 
-    public BackupManager() {}
+    public BackupManager() {
+    }
 
     public String getBackupFileName() {
         return backupFileName;
     }
-
-    private final String backupPath = InventoryPagesPlus.plugin.getDataFolder() + "\\backup\\";
 
     public void backupAll() {
         DatabaseType databaseType = InventoryPagesPlus.databaseType;
@@ -62,7 +62,7 @@ public class BackupManager {
                 exception.printStackTrace();
             }
         } else if (InventoryPagesPlus.databaseType == DatabaseType.H2) {
-            if (PlayerInventoryDataH2Storage.getConnection() ==  null) {
+            if (PlayerInventoryDataH2Storage.getConnection() == null) {
                 DebugManager.debug("BACKUP (DATABASE: " + databaseType + ")", "Cannot backup because H2 Database connection is not valid!");
                 return;
             }
@@ -73,8 +73,8 @@ public class BackupManager {
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
-        } else if (InventoryPagesPlus.databaseType == DatabaseType.MYSQL){
-            if (PlayerInventoryDataMySQLStorage.getConnection() ==  null) {
+        } else if (InventoryPagesPlus.databaseType == DatabaseType.MYSQL) {
+            if (PlayerInventoryDataMySQLStorage.getConnection() == null) {
                 DebugManager.debug("BACKUP (DATABASE: " + databaseType + ")", "Cannot backup because MySQL Database connection is not valid!");
                 return;
             }
@@ -108,7 +108,7 @@ public class BackupManager {
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

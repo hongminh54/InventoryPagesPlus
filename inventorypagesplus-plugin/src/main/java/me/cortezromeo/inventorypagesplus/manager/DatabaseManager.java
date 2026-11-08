@@ -19,12 +19,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DatabaseManager implements InventoryPagesPlusDataManager {
 
-    public DatabaseManager() {}
-
-    private ConcurrentHashMap<String, PlayerInventoryDatabase> playerInventoryDatabase = new ConcurrentHashMap<>();
-    private HashMap<String, String> tempPlayerUUID = new HashMap<>(); // mainly use for loading old database which already was created
     public static File crashedFile = new File(InventoryPagesPlus.plugin.getDataFolder() + "/database/crashed.yml");
     public static FileConfiguration crashedData = YamlConfiguration.loadConfiguration(crashedFile);
+    private final ConcurrentHashMap<String, PlayerInventoryDatabase> playerInventoryDatabase = new ConcurrentHashMap<>();
+    private final HashMap<String, String> tempPlayerUUID = new HashMap<>(); // mainly use for loading old database which already was created
+    public DatabaseManager() {
+    }
 
     @Override
     public ConcurrentHashMap<String, PlayerInventoryDatabase> getPlayerInventoryDatabase() {
@@ -128,7 +128,7 @@ public class DatabaseManager implements InventoryPagesPlusDataManager {
                         player.getInventory().setItem(i + 9, null);
                     }
                 }
-                crashedData.set("crashed." + player.getUniqueId().toString(), null);
+                crashedData.set("crashed." + player.getUniqueId(), null);
                 saveCrashedFile();
                 DebugManager.debug("CLEARING CRASHED PLAYER (" + player.getName() + ")", "Completed with no issues. &b&l(" + (System.currentTimeMillis() - time + "ms)"));
             }

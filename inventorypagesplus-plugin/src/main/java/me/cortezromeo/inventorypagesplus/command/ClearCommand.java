@@ -72,8 +72,7 @@ public class ClearCommand implements CommandExecutor, TabExecutor {
             return false;
         }
 
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
+        if (sender instanceof Player player) {
 
             if (!player.hasPermission("inventorypagesplus.clear") && !sender.hasPermission("inventorypagesplus.admin")) {
                 MessageUtil.sendMessage(player, Messages.NO_PERMISSION);

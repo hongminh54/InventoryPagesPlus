@@ -19,10 +19,12 @@ import java.util.HashMap;
 import java.util.List;
 
 public class PlayerInventory implements PlayerInventoryDatabase {
-    private Player player;
+    private final Player player;
     private String playerName;
     private String playerUUID;
-    private ItemStack prevItem, nextItem, noPageItem;
+    private final ItemStack prevItem;
+    private final ItemStack nextItem;
+    private final ItemStack noPageItem;
     private Integer currentPage = 0, maxPage = 1, prevItemPos, nextItemPos;
     private int permissionMaxPage;
     private Boolean hasUsedCreative = false;
@@ -119,11 +121,6 @@ public class PlayerInventory implements PlayerInventoryDatabase {
     }
 
     @Override
-    public int getEffectiveMaxPage() {
-        return Math.max(this.maxPage, this.permissionMaxPage);
-    }
-
-    @Override
     public void setMaxPage(int number) {
         if (number < 0)
             number = 0;
@@ -132,6 +129,11 @@ public class PlayerInventory implements PlayerInventoryDatabase {
         saveCurrentPage();
         if (player != null)
             showPage(player.getGameMode());
+    }
+
+    @Override
+    public int getEffectiveMaxPage() {
+        return Math.max(this.maxPage, this.permissionMaxPage);
     }
 
     @Override
@@ -529,16 +531,16 @@ public class PlayerInventory implements PlayerInventoryDatabase {
     }
 
     @Override
+    public void setItems(HashMap<Integer, ArrayList<ItemStack>> items) {
+        this.items = items;
+    }
+
+    @Override
     public ArrayList<ItemStack> getItems(int page) {
         if (!pageExists(page)) {
             createPage(page);
         }
         return items.get(page);
-    }
-
-    @Override
-    public void setItems(HashMap<Integer, ArrayList<ItemStack>> items) {
-        this.items = items;
     }
 
     @Override

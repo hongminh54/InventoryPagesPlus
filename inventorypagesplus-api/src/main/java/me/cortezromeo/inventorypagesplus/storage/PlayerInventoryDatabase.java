@@ -33,10 +33,10 @@ public interface PlayerInventoryDatabase {
 
     int getMaxPage();
 
+    void setMaxPage(int number);
+
     // The larger of the stored max page and the permission granted one, which is what the player can actually use.
     int getEffectiveMaxPage();
-
-    void setMaxPage(int number);
 
     void addMaxPage(int number);
 
@@ -70,9 +70,9 @@ public interface PlayerInventoryDatabase {
 
     HashMap<Integer, ArrayList<ItemStack>> getItems();
 
-    ArrayList<ItemStack> getItems(int page);
-
     void setItems(HashMap<Integer, ArrayList<ItemStack>> items);
+
+    ArrayList<ItemStack> getItems(int page);
 
     ArrayList<ItemStack> getCreativeItems();
 
