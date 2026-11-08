@@ -28,6 +28,10 @@ public class PlayerInventory implements PlayerInventoryDatabase {
     private Boolean hasUsedCreative = false;
     private HashMap<Integer, ArrayList<ItemStack>> items = new HashMap<>();
     private ArrayList<ItemStack> creativeItems = new ArrayList<>(27);
+    private String protectionPinHash;
+    private int protectionAttempts;
+    private long protectionBanUntil;
+    private boolean protectionUnlocked;
 
     PlayerInventory(Player player, String playerName, String playerUUID, int maxPage, HashMap<Integer, ArrayList<ItemStack>> items, ArrayList<ItemStack> creativeItems, ItemStack prevItem, Integer prevPos, ItemStack nextItem, Integer nextPos, ItemStack noPageItem) {
         this.player = player;
@@ -57,25 +61,31 @@ public class PlayerInventory implements PlayerInventoryDatabase {
         // This runs after setItems because that call replaces the whole page map.
         if (!pageExists(0))
             createPage(0);
+    }
 
-        if (player != null) {
-            boolean droppedItem = false;
-            for (int i = 0; i < 27; i++) {
-                // This slot can not be loaded because it is considered as a skip slot
-                if (!Settings.SKIP_SLOTS.isEmpty())
-                    if (Settings.SKIP_SLOTS.contains(i))
-                        continue;
+    @Override
+    public void recoverDisplayItems() {
+        if (player == null)
+            return;
 
-                ItemStack item = player.getInventory().getItem(i + 9);
-                if (item != null) {
-                    if (this.storeOrDropItem(item, player.getGameMode())) {
-                        droppedItem = true;
-                    }
-                }
-            }
-            if (droppedItem)
-                MessageUtil.sendMessage(player, Messages.ITEMS_DROPPED);
+        boolean droppedItem = false;
+        for (int i = 0; i < 27; i++) {
+            // This slot can not be loaded because it is considered as a skip slot
+            if (!Settings.SKIP_SLOTS.isEmpty())
+                if (Settings.SKIP_SLOTS.contains(i))
+                    continue;
+
+            ItemStack item = player.getInventory().getItem(i + 9);
+            if (item == null)
+                continue;
+            // Never absorb the fake navigation buttons back into storage.
+            if (InventoryPagesPlus.nms.getCustomData(item).equals(PlayerPageInventory.itemCustomData))
+                continue;
+            if (this.storeOrDropItem(item, player.getGameMode()))
+                droppedItem = true;
         }
+        if (droppedItem)
+            MessageUtil.sendMessage(player, Messages.ITEMS_DROPPED);
     }
 
     @Override
@@ -194,6 +204,9 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
     @Override
     public void saveCurrentPage() {
+        if (isProtectionLocked())
+            return;
+
         if (player == null)
             return;
 
@@ -275,6 +288,9 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
     @Override
     public void dropPage(int page, GameMode gm) {
+        if (isProtectionLocked())
+            return;
+
         if (gm != GameMode.CREATIVE) {
             for (int slot = 0; slot < 25; slot++) {
                 ItemStack item = InventoryPagesPlus.nms.getItemStack(this.getItems(page).get(slot));
@@ -302,6 +318,9 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
     @Override
     public void dropAllPages(GameMode gm) {
+        if (isProtectionLocked())
+            return;
+
         if (gm != GameMode.CREATIVE) {
             for (Integer page : this.items.keySet()) {
                 dropPage(page, gm);
@@ -328,6 +347,9 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
     @Override
     public void showPage(Integer page, GameMode gm) {
+        if (isProtectionLocked())
+            return;
+
         if (this.player == null)
             return;
 
@@ -453,6 +475,9 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
     @Override
     public void prevPage() {
+        if (isProtectionLocked())
+            return;
+
         // Re-resolve so a rank granted or lost while online applies without relogging.
         this.permissionMaxPage = PageLimitManager.getPermissionMaxPage(this.player);
         if (this.currentPage > 0) {
@@ -465,6 +490,9 @@ public class PlayerInventory implements PlayerInventoryDatabase {
 
     @Override
     public void nextPage() {
+        if (isProtectionLocked())
+            return;
+
         this.permissionMaxPage = PageLimitManager.getPermissionMaxPage(this.player);
         int effectiveMaxPage = getEffectiveMaxPage();
         if (this.currentPage > effectiveMaxPage) {
@@ -568,6 +596,10 @@ public class PlayerInventory implements PlayerInventoryDatabase {
     // returns true if dropped
     @Override
     public boolean storeOrDropItem(ItemStack itemStack, GameMode gameMode) {
+        // Locked: let vanilla pickup keep the item in the real inventory, never absorb it into the hidden page.
+        if (isProtectionLocked())
+            return true;
+
         if (this.player == null)
             return true;
 
@@ -640,5 +672,65 @@ public class PlayerInventory implements PlayerInventoryDatabase {
             }
         }
 
+    }
+
+    @Override
+    public String getProtectionPinHash() {
+        return protectionPinHash;
+    }
+
+    @Override
+    public void setProtectionPinHash(String protectionPinHash) {
+        this.protectionPinHash = protectionPinHash;
+    }
+
+    @Override
+    public int getProtectionAttempts() {
+        return protectionAttempts;
+    }
+
+    @Override
+    public void setProtectionAttempts(int protectionAttempts) {
+        this.protectionAttempts = protectionAttempts;
+    }
+
+    @Override
+    public long getProtectionBanUntil() {
+        return protectionBanUntil;
+    }
+
+    @Override
+    public void setProtectionBanUntil(long protectionBanUntil) {
+        this.protectionBanUntil = protectionBanUntil;
+    }
+
+    @Override
+    public boolean isProtectionUnlocked() {
+        return protectionUnlocked;
+    }
+
+    @Override
+    public void setProtectionUnlocked(boolean protectionUnlocked) {
+        this.protectionUnlocked = protectionUnlocked;
+    }
+
+    @Override
+    public boolean isProtectionLocked() {
+        if (!Settings.PROTECTION_ENABLED || !hasProtectionPin() || protectionUnlocked)
+            return false;
+        return player == null || !player.hasPermission("inventorypagesplus.protect.bypass");
+    }
+
+    @Override
+    public void clearDisplayedPage() {
+        if (player == null)
+            return;
+
+        for (int slot = 9; slot < 36; slot++) {
+            if (!Settings.SKIP_SLOTS.isEmpty() && Settings.SKIP_SLOTS.contains(slot - 9))
+                continue;
+            player.getInventory().setItem(slot, null);
+        }
+        player.updateInventory();
     }
 }

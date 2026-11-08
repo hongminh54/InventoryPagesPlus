@@ -31,3 +31,7 @@ commands:
     description: Set pages' item slot
   invsee:
     description: See inventory of other players
+  baove:
+    description: Protect your inventory pages with a PIN
+    aliases:
+      - pageprotect

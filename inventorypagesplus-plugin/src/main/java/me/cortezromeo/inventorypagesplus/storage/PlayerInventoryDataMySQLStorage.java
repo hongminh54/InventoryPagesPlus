@@ -6,6 +6,7 @@ import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
+import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import me.cortezromeo.inventorypagesplus.util.StringUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
@@ -30,6 +31,7 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
 
         if (ifTableExist(table)) {
             DebugManager.debug("LOADING DATABASE", "Connected to table " + table + ".");
+            migrateProtectionColumns();
         } else {
             try {
                 Statement statement = connection.createStatement();
@@ -42,6 +44,9 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
                         " PAGE INT, " +
                         " PREVITEMPOS VARCHAR(50), " +
                         " NEXTITEMPOS VARCHAR(50), " +
+                        " PROTECTIONPIN VARCHAR(255), " +
+                        " PROTECTIONATTEMPTS INT DEFAULT 0, " +
+                        " PROTECTIONBANUNTIL BIGINT DEFAULT 0, " +
                         " PRIMARY KEY (UUID))";
 
                 statement.executeUpdate(sql);
@@ -49,6 +54,28 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    // MySQL 8 has no ADD COLUMN IF NOT EXISTS, so probe the metadata before altering an existing table.
+    private void migrateProtectionColumns() {
+        try {
+            DatabaseMetaData metaData = connection.getMetaData();
+            ResultSet columns = metaData.getColumns(null, null, table, "PROTECTIONPIN");
+            boolean present = columns.next();
+            columns.close();
+            if (present)
+                return;
+
+            Statement statement = connection.createStatement();
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN PROTECTIONPIN VARCHAR(255)");
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN PROTECTIONATTEMPTS INT DEFAULT 0");
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN PROTECTIONBANUNTIL BIGINT DEFAULT 0");
+            statement.close();
+            DebugManager.debug("LOADING DATABASE (MySQL)", "Migrated protection columns for table " + table + ".");
+        } catch (Exception e) {
+            MessageUtil.log("&cFailed to migrate protection columns for MySQL table " + table + ". Protection data may not persist.");
+            e.printStackTrace();
         }
     }
 
@@ -87,6 +114,11 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
             ResultSet resultSet = ps.executeQuery();
 
             while (resultSet.next()) {
+                // Load protection first so setMaxPage's save/show side effects honor the locked state.
+                data.setProtectionPinHash(resultSet.getString("PROTECTIONPIN"));
+                data.setProtectionAttempts(resultSet.getInt("PROTECTIONATTEMPTS"));
+                data.setProtectionBanUntil(resultSet.getLong("PROTECTIONBANUNTIL"));
+
                 int maxPage = resultSet.getInt("MAXPAGE");
                 int currentPage = resultSet.getInt("PAGE");
                 String creativeItemsString = resultSet.getString("CREATIVEITEMS");
@@ -174,7 +206,7 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
 
     private static void initData(String playerUUID) {
         ArrayList<String> queries = new ArrayList<>();
-        queries.add("INSERT INTO " + table + " (UUID, PLAYERNAME, ITEMS, CREATIVEITEMS, MAXPAGE, PAGE, PREVITEMPOS, NEXTITEMPOS) values('" + playerUUID + "', '', '', '', 0, 0, '', '')");
+        queries.add("INSERT INTO " + table + " (UUID, PLAYERNAME, ITEMS, CREATIVEITEMS, MAXPAGE, PAGE, PREVITEMPOS, NEXTITEMPOS, PROTECTIONPIN, PROTECTIONATTEMPTS, PROTECTIONBANUNTIL) values('" + playerUUID + "', '', '', '', 0, 0, '', '', null, 0, 0)");
         queries.forEach(cmd -> {
             try (PreparedStatement ps = connection.prepareStatement(cmd)) {
                 ps.execute();
@@ -242,7 +274,10 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
                 + " MAXPAGE = ?,"
                 + " PAGE = ?,"
                 + " PREVITEMPOS = ?,"
-                + " NEXTITEMPOS = ?"
+                + " NEXTITEMPOS = ?,"
+                + " PROTECTIONPIN = ?,"
+                + " PROTECTIONATTEMPTS = ?,"
+                + " PROTECTIONBANUNTIL = ?"
                 + " WHERE UUID = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -278,7 +313,10 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
             preparedStatement.setInt(5, playerInventoryData.getCurrentPage());
             preparedStatement.setInt(6, playerInventoryData.getPrevItemPos());
             preparedStatement.setInt(7, playerInventoryData.getNextItemPos());
-            preparedStatement.setString(8, playerInventoryData.getPlayerUUID());
+            preparedStatement.setString(8, playerInventoryData.getProtectionPinHash());
+            preparedStatement.setInt(9, playerInventoryData.getProtectionAttempts());
+            preparedStatement.setLong(10, playerInventoryData.getProtectionBanUntil());
+            preparedStatement.setString(11, playerInventoryData.getPlayerUUID());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();

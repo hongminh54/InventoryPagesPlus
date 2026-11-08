@@ -45,6 +45,27 @@ public class Messages {
     public static String COMMAND_CLEAR_CLEAR_TARGETS_MESSAGE;
     public static String COMMAND_CLEAR_CLEAR_ALL_TARGET;
     public static String COMMAND_CLEAR_CLEAR_ALL_TARGETS_MESSAGE;
+    public static List<String> COMMAND_PROTECTION_MESSAGES = new ArrayList<>();
+    public static String COMMAND_PROTECTION_DISABLED;
+    public static String COMMAND_PROTECTION_NOT_SET;
+    public static String COMMAND_PROTECTION_ALREADY_SET;
+    public static String COMMAND_PROTECTION_INVALID_PIN;
+    public static String COMMAND_PROTECTION_PIN_MISMATCH;
+    public static String COMMAND_PROTECTION_WRONG_PIN;
+    public static String COMMAND_PROTECTION_BANNED;
+    public static String COMMAND_PROTECTION_UNLOCKED;
+    public static String COMMAND_PROTECTION_LOCKED;
+    public static String COMMAND_PROTECTION_LOCKED_REMINDER;
+    public static String COMMAND_PROTECTION_ALREADY_UNLOCKED;
+    public static String COMMAND_PROTECTION_SET_SUCCESS;
+    public static String COMMAND_PROTECTION_CHANGE_SUCCESS;
+    public static String COMMAND_PROTECTION_REMOVE_SUCCESS;
+    public static String COMMAND_PROTECTION_STATUS_NONE;
+    public static String COMMAND_PROTECTION_STATUS_LOCKED;
+    public static String COMMAND_PROTECTION_STATUS_UNLOCKED;
+    public static String COMMAND_PROTECTION_ADMIN_RESET;
+    public static String COMMAND_PROTECTION_ADMIN_RESET_TARGET;
+    public static String COMMAND_PROTECTION_COMMAND_BLOCKED;
 
     public static void setupValue(String locale) {
         locale = locale.toLowerCase();
@@ -95,6 +116,27 @@ public class Messages {
         COMMAND_CLEAR_CLEAR_TARGETS_MESSAGE = fileConfiguration.getString("messages.commands.clear.clear-targets-message");
         COMMAND_CLEAR_CLEAR_ALL_TARGET = fileConfiguration.getString("messages.commands.clear.clear-all-target");
         COMMAND_CLEAR_CLEAR_ALL_TARGETS_MESSAGE = fileConfiguration.getString("messages.commands.clear.clear-all-targets-message");
+        COMMAND_PROTECTION_MESSAGES = fileConfiguration.getStringList("messages.commands.protection.messages");
+        COMMAND_PROTECTION_DISABLED = fileConfiguration.getString("messages.commands.protection.disabled");
+        COMMAND_PROTECTION_NOT_SET = fileConfiguration.getString("messages.commands.protection.not-set");
+        COMMAND_PROTECTION_ALREADY_SET = fileConfiguration.getString("messages.commands.protection.already-set");
+        COMMAND_PROTECTION_INVALID_PIN = fileConfiguration.getString("messages.commands.protection.invalid-pin");
+        COMMAND_PROTECTION_PIN_MISMATCH = fileConfiguration.getString("messages.commands.protection.pin-mismatch");
+        COMMAND_PROTECTION_WRONG_PIN = fileConfiguration.getString("messages.commands.protection.wrong-pin");
+        COMMAND_PROTECTION_BANNED = fileConfiguration.getString("messages.commands.protection.banned");
+        COMMAND_PROTECTION_UNLOCKED = fileConfiguration.getString("messages.commands.protection.unlocked");
+        COMMAND_PROTECTION_LOCKED = fileConfiguration.getString("messages.commands.protection.locked");
+        COMMAND_PROTECTION_LOCKED_REMINDER = fileConfiguration.getString("messages.commands.protection.locked-reminder");
+        COMMAND_PROTECTION_ALREADY_UNLOCKED = fileConfiguration.getString("messages.commands.protection.already-unlocked");
+        COMMAND_PROTECTION_SET_SUCCESS = fileConfiguration.getString("messages.commands.protection.set-success");
+        COMMAND_PROTECTION_CHANGE_SUCCESS = fileConfiguration.getString("messages.commands.protection.change-success");
+        COMMAND_PROTECTION_REMOVE_SUCCESS = fileConfiguration.getString("messages.commands.protection.remove-success");
+        COMMAND_PROTECTION_STATUS_NONE = fileConfiguration.getString("messages.commands.protection.status-none");
+        COMMAND_PROTECTION_STATUS_LOCKED = fileConfiguration.getString("messages.commands.protection.status-locked");
+        COMMAND_PROTECTION_STATUS_UNLOCKED = fileConfiguration.getString("messages.commands.protection.status-unlocked");
+        COMMAND_PROTECTION_ADMIN_RESET = fileConfiguration.getString("messages.commands.protection.admin-reset");
+        COMMAND_PROTECTION_ADMIN_RESET_TARGET = fileConfiguration.getString("messages.commands.protection.admin-reset-target");
+        COMMAND_PROTECTION_COMMAND_BLOCKED = fileConfiguration.getString("messages.commands.protection.command-blocked");
 
         DebugManager.debug("LOADING MESSAGES", "Loaded message file name: " + locale + ".");
     }

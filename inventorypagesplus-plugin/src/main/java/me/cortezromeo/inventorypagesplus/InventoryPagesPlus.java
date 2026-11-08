@@ -19,6 +19,7 @@
   import me.cortezromeo.inventorypagesplus.manager.InventoryPagesPlusDataManager;
   import me.cortezromeo.inventorypagesplus.server.VersionSupport;
   import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDataStorage;
+  import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
   import me.cortezromeo.inventorypagesplus.support.PAPISupport;
   import me.cortezromeo.inventorypagesplus.util.MessageUtil;
   import me.cortezromeo.support.version.cross.CrossVersionSupport;
@@ -243,6 +244,7 @@ public final class InventoryPagesPlus extends JavaPlugin {
         new ClearCommand();
         new ClearAllCommand();
         new InvseeCommand();
+        new ProtectionCommand();
     }
 
     public void initListeners() {
@@ -255,6 +257,7 @@ public final class InventoryPagesPlus extends JavaPlugin {
         new InventoryCreativeListener();
         new EntityPickupListener();
         new InventoryOpenListener();
+        new ProtectionListener();
         //Bukkit.getPluginManager().registerEvents(new InvseeOtherItemsInventory(), InventoryPagesPlus.plugin);
     }
 
@@ -279,8 +282,13 @@ public final class InventoryPagesPlus extends JavaPlugin {
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             String playerUUID = player.getUniqueId().toString();
             if (getDatabaseManager().getPlayerInventoryDatabase().containsKey(playerUUID)) {
+                PlayerInventoryDatabase data = getDatabaseManager().getPlayerInventoryDatabase(player.getUniqueId());
+                boolean wasLocked = data.isProtectionLocked();
                 // update inventories to hashmap and save to file
                 getDatabaseManager().savePlayerInventory(player.getName());
+                // Clear the displayed page so its items are not duplicated from playerdata after a restart.
+                if (!wasLocked)
+                    data.clearDisplayedPage();
                 getDatabaseManager().clearAndRemoveCrashedPlayer(player.getName());
             }
         }

@@ -82,6 +82,11 @@ public class ClearAllCommand implements CommandExecutor, TabExecutor {
             GameMode playerGameMode = player.getGameMode();
             PlayerInventoryDatabase playerInventoryData = InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(UUID.fromString(playerUUID));
 
+            if (playerInventoryData.isProtectionLocked()) {
+                MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_LOCKED_REMINDER);
+                return false;
+            }
+
             playerInventoryData.clearAllPages(playerGameMode);
             clearHotbar(player);
             playerInventoryData.showPage(player.getGameMode());

@@ -2,8 +2,10 @@ package me.cortezromeo.inventorypagesplus.manager;
 
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.Settings;
+import me.cortezromeo.inventorypagesplus.language.Messages;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDataStorage;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
+import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -58,7 +60,6 @@ public class DatabaseManager implements InventoryPagesPlusDataManager {
     @Override
     public void loadPlayerInventory(String playerName) {
         long time = System.currentTimeMillis();
-        clearAndRemoveCrashedPlayer(playerName);
         String playerUUID;
         if (tempPlayerUUID.containsKey(playerName))
             playerUUID = tempPlayerUUID.get(playerName);
@@ -71,10 +72,21 @@ public class DatabaseManager implements InventoryPagesPlusDataManager {
         }
 
         tempPlayerUUID.put(playerName, playerUUID);
-        playerInventoryDatabase.put(playerUUID, PlayerInventoryDataStorage.getPlayerInventoryData(playerName));
-        if (Bukkit.getPlayer(playerName) != null) {
+        PlayerInventoryDatabase data = PlayerInventoryDataStorage.getPlayerInventoryData(playerName);
+        playerInventoryDatabase.put(playerUUID, data);
+        Player player = Bukkit.getPlayer(playerName);
+        // Recover leftover display items only when unlocked; a locked player's slots 9..35 hold their real items.
+        if (player != null && !data.isProtectionLocked())
+            data.recoverDisplayItems();
+        clearAndRemoveCrashedPlayer(playerName);
+        if (player != null) {
             addCrashedPlayer(playerUUID);
-            playerInventoryDatabase.get(playerUUID).showPage(Bukkit.getPlayer(playerName).getGameMode());
+            if (data.isProtectionLocked()) {
+                // Leave the real items in slots 9..35 intact and frozen; never wipe them on join.
+                MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_LOCKED_REMINDER);
+            } else {
+                data.showPage(player.getGameMode());
+            }
         }
         DebugManager.debug("LOADING DATABASE PLAYER (" + playerName + ")", "Completed with no issues. &b&l(" + (System.currentTimeMillis() - time + "ms)"));
     }
@@ -102,14 +114,19 @@ public class DatabaseManager implements InventoryPagesPlusDataManager {
     public void clearAndRemoveCrashedPlayer(String playerName) {
         long time = System.currentTimeMillis();
         if (crashedPlayersExist()) {
-            if (hasCrashed(PlayerInventoryDataStorage.getPlayerUUIDFromData(playerName, true)) && Bukkit.getPlayer(playerName) != null) {
+            String playerUUID = PlayerInventoryDataStorage.getPlayerUUIDFromData(playerName, true);
+            if (hasCrashed(playerUUID) && Bukkit.getPlayer(playerName) != null) {
                 Player player = Bukkit.getPlayer(playerName);
-                for (int i = 0; i < 27; i++) {
-                    // This slot can not be loaded because it is considered as a skip slot
-                    if (!Settings.SKIP_SLOTS.isEmpty())
-                        if (Settings.SKIP_SLOTS.contains(i))
-                            continue;
-                    player.getInventory().setItem(i + 9, null);
+                PlayerInventoryDatabase data = playerInventoryDatabase.get(playerUUID);
+                // A locked player's slots 9..35 hold their real items, not a displayed page, so never wipe them.
+                if (data == null || !data.isProtectionLocked()) {
+                    for (int i = 0; i < 27; i++) {
+                        // This slot can not be loaded because it is considered as a skip slot
+                        if (!Settings.SKIP_SLOTS.isEmpty())
+                            if (Settings.SKIP_SLOTS.contains(i))
+                                continue;
+                        player.getInventory().setItem(i + 9, null);
+                    }
                 }
                 crashedData.set("crashed." + player.getUniqueId().toString(), null);
                 saveCrashedFile();

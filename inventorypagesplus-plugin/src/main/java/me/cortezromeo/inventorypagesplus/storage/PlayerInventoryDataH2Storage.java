@@ -47,8 +47,15 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
                     " PAGE INT, " +
                     " PREVITEMPOS VARCHAR(50), " +
                     " NEXTITEMPOS VARCHAR(50), " +
+                    " PROTECTIONPIN VARCHAR(255), " +
+                    " PROTECTIONATTEMPTS INT DEFAULT 0, " +
+                    " PROTECTIONBANUNTIL BIGINT DEFAULT 0, " +
                     " PRIMARY KEY (UUID))";
             statement.executeUpdate(sql);
+            // CREATE TABLE IF NOT EXISTS leaves old tables untouched, so add the protection columns idempotently.
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN IF NOT EXISTS PROTECTIONPIN VARCHAR(255)");
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN IF NOT EXISTS PROTECTIONATTEMPTS INT DEFAULT 0");
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN IF NOT EXISTS PROTECTIONBANUNTIL BIGINT DEFAULT 0");
             DebugManager.debug("LOADING DATABASE (H2)", "Connected to table " + table + ".");
         } catch (Exception e) {
             e.printStackTrace();
@@ -75,6 +82,11 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
             ResultSet resultSet = ps.executeQuery();
 
             while (resultSet.next()) {
+                // Load protection first so setMaxPage's save/show side effects honor the locked state.
+                data.setProtectionPinHash(resultSet.getString("PROTECTIONPIN"));
+                data.setProtectionAttempts(resultSet.getInt("PROTECTIONATTEMPTS"));
+                data.setProtectionBanUntil(resultSet.getLong("PROTECTIONBANUNTIL"));
+
                 int maxPage = resultSet.getInt("MAXPAGE");
                 int currentPage = resultSet.getInt("PAGE");
                 String creativeItemsString = resultSet.getString("CREATIVEITEMS");
@@ -161,7 +173,7 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
 
     private static void initData(String playerUUID) {
         ArrayList<String> queries = new ArrayList<>();
-        queries.add("INSERT INTO " + table + " (UUID, PLAYERNAME, ITEMS, CREATIVEITEMS, MAXPAGE, PAGE, PREVITEMPOS, NEXTITEMPOS) values('" + playerUUID + "', '', '', '', 0, 0, '', '')");
+        queries.add("INSERT INTO " + table + " (UUID, PLAYERNAME, ITEMS, CREATIVEITEMS, MAXPAGE, PAGE, PREVITEMPOS, NEXTITEMPOS, PROTECTIONPIN, PROTECTIONATTEMPTS, PROTECTIONBANUNTIL) values('" + playerUUID + "', '', '', '', 0, 0, '', '', null, 0, 0)");
         queries.forEach(cmd -> {
             try (PreparedStatement ps = connection.prepareStatement(cmd)) {
                 ps.execute();
@@ -220,7 +232,10 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
                 + " MAXPAGE = ?,"
                 + " PAGE = ?,"
                 + " PREVITEMPOS = ?,"
-                + " NEXTITEMPOS = ?"
+                + " NEXTITEMPOS = ?,"
+                + " PROTECTIONPIN = ?,"
+                + " PROTECTIONATTEMPTS = ?,"
+                + " PROTECTIONBANUNTIL = ?"
                 + " WHERE UUID = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -256,7 +271,10 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
             preparedStatement.setInt(5, playerInventoryData.getCurrentPage());
             preparedStatement.setInt(6, playerInventoryData.getPrevItemPos());
             preparedStatement.setInt(7, playerInventoryData.getNextItemPos());
-            preparedStatement.setString(8, playerInventoryData.getPlayerUUID());
+            preparedStatement.setString(8, playerInventoryData.getProtectionPinHash());
+            preparedStatement.setInt(9, playerInventoryData.getProtectionAttempts());
+            preparedStatement.setLong(10, playerInventoryData.getProtectionBanUntil());
+            preparedStatement.setString(11, playerInventoryData.getPlayerUUID());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();

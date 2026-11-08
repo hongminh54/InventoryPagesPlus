@@ -1,8 +1,8 @@
 package me.cortezromeo.inventorypagesplus.listener;
 
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
-import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
+import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -21,17 +21,17 @@ public class PlayerQuitListener implements Listener {
         String playerUUID = player.getUniqueId().toString();
 
         if (InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase().containsKey(playerUUID)) {
-/*            Bukkit.getScheduler().runTaskAsynchronously(InventoryPagesPlus.plugin, () -> {
-                DatabaseManager.savePlayerInventory(player.getName());
-            });*/
+            PlayerInventoryDatabase data = InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(player.getUniqueId());
+            boolean wasLocked = data.isProtectionLocked();
+
             InventoryPagesPlus.getDatabaseManager().savePlayerInventory(player.getName());
 
-            for (int i = 9; i < 36; i++) {
-                if (!Settings.SKIP_SLOTS.isEmpty())
-                    if (Settings.SKIP_SLOTS.contains(i - 9))
-                        continue;
-                player.getInventory().setItem(i, null);
-            }
+            // While locked, slots 9..35 hold the player's real items; clearing them would delete real items.
+            if (!wasLocked)
+                data.clearDisplayedPage();
+
+            // An unlock must never survive a relog, even if this object stays cached in the map.
+            data.setProtectionUnlocked(false);
         }
     }
 }

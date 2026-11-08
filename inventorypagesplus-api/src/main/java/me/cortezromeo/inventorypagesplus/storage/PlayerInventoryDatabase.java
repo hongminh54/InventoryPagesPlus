@@ -84,10 +84,37 @@ public interface PlayerInventoryDatabase {
 
     boolean storeOrDropItem(ItemStack itemStack, GameMode gameMode);
 
+    // Absorbs leftover real items from display slots 9..35 into the hotbar/pages. Call only when NOT protection-locked.
+    void recoverDisplayItems();
+
     int getUsedSlotCreative();
 
     void prevPage();
 
     void nextPage();
+
+    String getProtectionPinHash();
+
+    void setProtectionPinHash(String protectionPinHash);
+
+    int getProtectionAttempts();
+
+    void setProtectionAttempts(int protectionAttempts);
+
+    long getProtectionBanUntil();
+
+    void setProtectionBanUntil(long protectionBanUntil);
+
+    boolean isProtectionUnlocked();
+
+    void setProtectionUnlocked(boolean protectionUnlocked);
+
+    boolean isProtectionLocked();
+
+    void clearDisplayedPage();
+
+    default boolean hasProtectionPin() {
+        return getProtectionPinHash() != null && !getProtectionPinHash().isEmpty();
+    }
 
 }

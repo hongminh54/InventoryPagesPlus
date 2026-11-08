@@ -1,6 +1,7 @@
 package me.cortezromeo.inventorypagesplus;
 
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
+import me.cortezromeo.inventorypagesplus.manager.ProtectionManager;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
@@ -41,6 +42,12 @@ public class Settings {
     public static double ADVANCED_PICK_UP_SETTINGS_SOUND_VOLUME;
     public static double ADVANCED_PICK_UP_SETTINGS_SOUND_PITCH;
     public static List<Integer> SKIP_SLOTS = new ArrayList<>();
+    public static boolean PROTECTION_ENABLED;
+    public static int PROTECTION_PIN_MIN_LENGTH;
+    public static int PROTECTION_PIN_MAX_LENGTH;
+    public static int PROTECTION_MAX_ATTEMPTS;
+    public static long PROTECTION_BAN_SECONDS;
+    public static List<String> PROTECTION_COMMAND_BLACKLIST = new ArrayList<>();
 
     public static void setupValue() {
         DebugManager.debug("SETTINGS", "Loading settings from config yaml...");
@@ -85,6 +92,18 @@ public class Settings {
             } catch (Exception exception) {
                 DebugManager.debug("SETTINGS", "(inventory-settings.skip-slots) Skipped " + skipSlotNumber + " because it is not an integer!");
             }
+        }
+        PROTECTION_ENABLED = configuration.getBoolean("protection.enabled", true);
+        PROTECTION_PIN_MIN_LENGTH = configuration.getInt("protection.pin.min-length", 4);
+        PROTECTION_PIN_MAX_LENGTH = configuration.getInt("protection.pin.max-length", 6);
+        PROTECTION_MAX_ATTEMPTS = configuration.getInt("protection.max-attempts", 5);
+        PROTECTION_BAN_SECONDS = configuration.getLong("protection.ban-seconds", 300L);
+        // Reassign so a reload does not accumulate stale entries; normalize to lowercase root command names.
+        PROTECTION_COMMAND_BLACKLIST = new ArrayList<>();
+        for (String entry : configuration.getStringList("protection.command-blacklist")) {
+            String command = ProtectionManager.normalizeCommand(entry);
+            if (!command.isEmpty())
+                PROTECTION_COMMAND_BLACKLIST.add(command);
         }
         DebugManager.debug("SETTINGS", "Loaded settings from config yaml.");
     }

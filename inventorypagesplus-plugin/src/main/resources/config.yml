@@ -98,6 +98,21 @@ inventory-settings:
   skip-slots:
     - -1
 
+# Protect virtual inventory pages with a PIN.
+# Players must enter the PIN after every join before their pages are shown.
+protection:
+  enabled: true
+  pin:
+    min-length: 4
+    max-length: 6
+  # Wrong PINs allowed before a temporary ban.
+  max-attempts: 5
+  # Temporary ban duration in seconds. Set to 0 to disable the ban.
+  ban-seconds: 300
+  # Commands blocked while a player's pages are locked (root command names).
+  # /baove and /pageprotect are always allowed so players can unlock. List aliases explicitly if needed.
+  command-blacklist: []
+
 # Permission based page limits.
 # Node format: inventorypagesplus.slotpage.<suffix>
 #   - A number suffix (inventorypagesplus.slotpage.5) grants 5 total pages.

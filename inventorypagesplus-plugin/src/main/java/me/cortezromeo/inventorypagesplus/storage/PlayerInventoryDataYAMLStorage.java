@@ -51,6 +51,11 @@ public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
         if (storage.getString("name") == null) {
             return data;
         } else {
+            // Load protection first so setMaxPage's save/show side effects honor the locked state.
+            data.setProtectionPinHash(storage.getString("protection.pin"));
+            data.setProtectionAttempts(storage.getInt("protection.attempts"));
+            data.setProtectionBanUntil(storage.getLong("protection.ban-until"));
+
             int maxPage = storage.getInt("maxPage");
             data.setMaxPage(maxPage);
             data.setPlayerName(playerName);
@@ -176,6 +181,10 @@ public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
         playerDataCfg.set("currentPage", playerInventoryData.getCurrentPage());
         playerDataCfg.set("prevItemPos", playerInventoryData.getPrevItemPos());
         playerDataCfg.set("nextItemPos", playerInventoryData.getNextItemPos());
+
+        playerDataCfg.set("protection.pin", playerInventoryData.getProtectionPinHash());
+        playerDataCfg.set("protection.attempts", playerInventoryData.getProtectionAttempts());
+        playerDataCfg.set("protection.ban-until", playerInventoryData.getProtectionBanUntil());
 
         // save survival items
         for (Map.Entry<Integer, ArrayList<ItemStack>> pageItemEntry : playerInventoryData.getItems().entrySet()) {
