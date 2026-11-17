@@ -482,16 +482,16 @@ public final class HistoryStorageRegression {
         test("MODEL summary carries metadata and clamps counts", () -> {
             InventorySnapshotSummary summary = new InventorySnapshotSummary(uuid(1), A, "Alice", 9,
                     SnapshotReason.BEFORE_RESTORE, null, -1, -2, -3, true);
-            eq(uuid(1), summary.getId(), "id");
-            eq(A, summary.getPlayerUUID(), "owner");
-            eq("Alice", summary.getPlayerName(), "name");
-            eq(9L, summary.getCreatedAt(), "time");
-            eq(SnapshotReason.BEFORE_RESTORE, summary.getReason(), "reason");
-            eq("", summary.getServerId(), "server");
-            eq(0, summary.getCurrentPage(), "current");
-            eq(0, summary.getMaxPage(), "max");
-            eq(0, summary.getPageCount(), "page count");
-            check(summary.isUsedCreative(), "creative flag");
+            eq(uuid(1), summary.id(), "id");
+            eq(A, summary.playerUUID(), "owner");
+            eq("Alice", summary.playerName(), "name");
+            eq(9L, summary.createdAt(), "time");
+            eq(SnapshotReason.BEFORE_RESTORE, summary.reason(), "reason");
+            eq("", summary.serverId(), "server");
+            eq(0, summary.currentPage(), "current");
+            eq(0, summary.maxPage(), "max");
+            eq(0, summary.pageCount(), "page count");
+            check(summary.usedCreative(), "creative flag");
         });
         test("MODEL snapshot reasons retain all eight supported reasons", () ->
                 eq(Set.of("PERIODIC", "JOIN", "QUIT", "MANUAL", "BEFORE_CLEAR", "BEFORE_CLEAR_ALL", "BEFORE_RESTORE", "DISABLE"),
@@ -668,12 +668,12 @@ public final class HistoryStorageRegression {
             stack(result.getPageItems(2).get(2), Material.DIAMOND, 7);
             stack(result.getCreativeItems().get(1), Material.EMERALD, 4);
             InventorySnapshotSummary summary = fixture.storage.list(A, ALPHA, 0, 10, 10).get(0);
-            eq(original.getId(), summary.getId(), "summary id");
-            eq(original.getPlayerName(), summary.getPlayerName(), "summary name");
-            eq(original.getPageCount(), summary.getPageCount(), "summary count");
-            eq(original.getCurrentPage(), summary.getCurrentPage(), "summary current");
-            eq(original.getMaxPage(), summary.getMaxPage(), "summary maximum");
-            check(summary.isUsedCreative(), "summary creative");
+            eq(original.getId(), summary.id(), "summary id");
+            eq(original.getPlayerName(), summary.playerName(), "summary name");
+            eq(original.getPageCount(), summary.pageCount(), "summary count");
+            eq(original.getCurrentPage(), summary.currentPage(), "summary current");
+            eq(original.getMaxPage(), summary.maxPage(), "summary maximum");
+            check(summary.usedCreative(), "summary creative");
         });
         storageTest(backend, "get enforces owner and missing id isolation", fixture -> {
             fixture.save(sample(1, A, 9, ALPHA), "one");
@@ -819,7 +819,7 @@ public final class HistoryStorageRegression {
                 fixture.mutate(1, 9, "reason", reason);
                 LOGS.clear();
                 InventorySnapshotSummary summary = fixture.storage.list(A, "", 0, 10, 99).get(0);
-                eq(SnapshotReason.PERIODIC, summary.getReason(), "summary fallback");
+                eq(SnapshotReason.PERIODIC, summary.reason(), "summary fallback");
                 warn("Invalid history reason");
                 LOGS.clear();
                 InventorySnapshot result = fixture.storage.get(A, uuid(1), 9);
@@ -1485,8 +1485,8 @@ public final class HistoryStorageRegression {
             fixture.seed();
             InventorySnapshotSummary reference = fixture.storage.list(A, ALPHA, 0, Long.MAX_VALUE, 1).get(0);
             InventorySnapshotSummary previous = fixture.storage.adjacent(reference, ALPHA, 0, Long.MAX_VALUE, true);
-            eq(uuid(3), previous.getId(), "timestamp tie skipped");
-            eq(uuid(4), fixture.storage.adjacent(previous, ALPHA, 0, Long.MAX_VALUE, false).getId(), "reverse tie navigation");
+            eq(uuid(3), previous.id(), "timestamp tie skipped");
+            eq(uuid(4), fixture.storage.adjacent(previous, ALPHA, 0, Long.MAX_VALUE, false).id(), "reverse tie navigation");
             eq(null, fixture.storage.adjacent(reference, ALPHA, 0, Long.MAX_VALUE, false), "cross-server or owner leak");
             eq(null, fixture.storage.adjacent(previous, ALPHA, 1000, 2000, true), "escaped selected date");
             COPIES.set(0);
@@ -1874,7 +1874,7 @@ public final class HistoryStorageRegression {
 
     private static void ids(List<InventorySnapshotSummary> actual, int... expected) {
         eq(Arrays.stream(expected).mapToObj(HistoryStorageRegression::uuid).collect(Collectors.toList()),
-                actual.stream().map(InventorySnapshotSummary::getId).collect(Collectors.toList()), "snapshot ids/order");
+                actual.stream().map(InventorySnapshotSummary::id).collect(Collectors.toList()), "snapshot ids/order");
     }
 
     private static void warn(String fragment) {

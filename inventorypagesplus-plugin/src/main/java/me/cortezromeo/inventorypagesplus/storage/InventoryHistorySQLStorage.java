@@ -1,10 +1,10 @@
 package me.cortezromeo.inventorypagesplus.storage;
 
 import com.google.gson.Gson;
-import me.cortezromeo.inventorypagesplus.history.HistoryStoredRecord;
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.enums.DatabaseType;
+import me.cortezromeo.inventorypagesplus.history.HistoryStoredRecord;
 import me.cortezromeo.inventorypagesplus.history.InventorySnapshot;
 import me.cortezromeo.inventorypagesplus.history.InventorySnapshotSummary;
 import me.cortezromeo.inventorypagesplus.history.SnapshotReason;
@@ -12,17 +12,8 @@ import me.cortezromeo.inventorypagesplus.util.StringUtil;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.ResultSetMetaData;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.sql.*;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -183,9 +174,9 @@ public class InventoryHistorySQLStorage implements InventoryHistoryStorage {
                 if (!result.next())
                     return null;
                 InventorySnapshotSummary summary = readSummary(result);
-                return new InventorySnapshot(summary.getId(), summary.getPlayerUUID(), summary.getPlayerName(),
-                        summary.getCreatedAt(), summary.getReason(), summary.getServerId(), summary.getCurrentPage(),
-                        summary.getMaxPage(), summary.isUsedCreative(), StringUtil.pagesFromJson(result.getString("PAGES")),
+                return new InventorySnapshot(summary.id(), summary.playerUUID(), summary.playerName(),
+                        summary.createdAt(), summary.reason(), summary.serverId(), summary.currentPage(),
+                        summary.maxPage(), summary.usedCreative(), StringUtil.pagesFromJson(result.getString("PAGES")),
                         StringUtil.itemsFromJson(result.getString("CREATIVEITEMS")),
                         StringUtil.itemsFromJson(result.getString("ARMOR"), 4),
                         StringUtil.itemFromJson(result.getString("OFFHAND")),
@@ -260,12 +251,12 @@ public class InventoryHistorySQLStorage implements InventoryHistoryStorage {
                 + " AND (CREATEDAT" + comparison + " OR (CREATEDAT = ? AND ID" + comparison + "))"
                 + (filterServer ? " AND SERVERID = ?" : "") + " ORDER BY CREATEDAT" + order + ", ID" + order + " LIMIT 1";
         try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, reference.getPlayerUUID());
+            statement.setString(1, reference.playerUUID());
             statement.setLong(2, fromMillis);
             statement.setLong(3, toMillis);
-            statement.setLong(4, reference.getCreatedAt());
-            statement.setLong(5, reference.getCreatedAt());
-            statement.setString(6, reference.getId());
+            statement.setLong(4, reference.createdAt());
+            statement.setLong(5, reference.createdAt());
+            statement.setString(6, reference.id());
             if (filterServer)
                 statement.setString(7, serverId);
             try (ResultSet result = statement.executeQuery()) {
@@ -299,9 +290,9 @@ public class InventoryHistorySQLStorage implements InventoryHistoryStorage {
     public HistoryStoredRecord exportRecord(InventorySnapshotSummary summary) throws Exception {
         try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM " + table
                 + " WHERE ID = ? AND PLAYERUUID = ? AND CREATEDAT = ?")) {
-            statement.setString(1, summary.getId());
-            statement.setString(2, summary.getPlayerUUID());
-            statement.setLong(3, summary.getCreatedAt());
+            statement.setString(1, summary.id());
+            statement.setString(2, summary.playerUUID());
+            statement.setLong(3, summary.createdAt());
             try (ResultSet result = statement.executeQuery()) {
                 if (!result.next())
                     return null;
@@ -328,9 +319,9 @@ public class InventoryHistorySQLStorage implements InventoryHistoryStorage {
         try {
             try (PreparedStatement lock = connection.prepareStatement("SELECT ID FROM " + table
                     + " WHERE ID = ? AND PLAYERUUID = ? AND CREATEDAT = ? FOR UPDATE")) {
-                lock.setString(1, summary.getId());
-                lock.setString(2, summary.getPlayerUUID());
-                lock.setLong(3, summary.getCreatedAt());
+                lock.setString(1, summary.id());
+                lock.setString(2, summary.playerUUID());
+                lock.setLong(3, summary.createdAt());
                 try (ResultSet result = lock.executeQuery()) {
                     if (!result.next()) {
                         connection.rollback();
@@ -345,9 +336,9 @@ public class InventoryHistorySQLStorage implements InventoryHistoryStorage {
             }
             try (PreparedStatement statement = connection.prepareStatement("DELETE FROM " + table
                     + " WHERE ID = ? AND PLAYERUUID = ? AND CREATEDAT = ?")) {
-                statement.setString(1, summary.getId());
-                statement.setString(2, summary.getPlayerUUID());
-                statement.setLong(3, summary.getCreatedAt());
+                statement.setString(1, summary.id());
+                statement.setString(2, summary.playerUUID());
+                statement.setLong(3, summary.createdAt());
                 boolean deleted = statement.executeUpdate() == 1;
                 connection.commit();
                 return deleted;

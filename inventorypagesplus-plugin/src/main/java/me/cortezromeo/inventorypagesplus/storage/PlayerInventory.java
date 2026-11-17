@@ -20,11 +20,11 @@ import java.util.List;
 
 public class PlayerInventory implements PlayerInventoryDatabase {
     private final Player player;
-    private String playerName;
-    private String playerUUID;
     private final ItemStack prevItem;
     private final ItemStack nextItem;
     private final ItemStack noPageItem;
+    private String playerName;
+    private String playerUUID;
     private Integer currentPage = 0, maxPage = 1, prevItemPos, nextItemPos;
     private int permissionMaxPage;
     private Boolean hasUsedCreative = false;

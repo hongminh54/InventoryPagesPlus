@@ -14,31 +14,19 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Path;
-import java.nio.file.LinkOption;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.PriorityQueue;
-import java.util.stream.Stream;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.nio.file.*;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 public class InventoryHistoryYAMLStorage implements InventoryHistoryStorage {
 
+    private static final Comparator<InventorySnapshotSummary> ORDER = Comparator
+            .comparingLong(InventorySnapshotSummary::createdAt).thenComparing(InventorySnapshotSummary::id);
     private final File directory;
     private final Logger logger;
     private Stream<Path> expiryScan;
     private Iterator<Path> expiryIterator;
-    private static final Comparator<InventorySnapshotSummary> ORDER = Comparator
-            .comparingLong(InventorySnapshotSummary::getCreatedAt).thenComparing(InventorySnapshotSummary::getId);
 
     public InventoryHistoryYAMLStorage() throws IOException {
         logger = InventoryPagesPlus.plugin.getLogger();
@@ -115,9 +103,9 @@ public class InventoryHistoryYAMLStorage implements InventoryHistoryStorage {
         if (configuration == null || !hasValidJson(file, configuration))
             return null;
         InventorySnapshotSummary summary = readSummary(file, configuration);
-        return new InventorySnapshot(summary.getId(), summary.getPlayerUUID(), summary.getPlayerName(),
-                summary.getCreatedAt(), summary.getReason(), summary.getServerId(), summary.getCurrentPage(),
-                summary.getMaxPage(), summary.isUsedCreative(), StringUtil.pagesFromJson(configuration.getString("pages-json")),
+        return new InventorySnapshot(summary.id(), summary.playerUUID(), summary.playerName(),
+                summary.createdAt(), summary.reason(), summary.serverId(), summary.currentPage(),
+                summary.maxPage(), summary.usedCreative(), StringUtil.pagesFromJson(configuration.getString("pages-json")),
                 StringUtil.itemsFromJson(configuration.getString("creative-items-json")),
                 StringUtil.itemsFromJson(configuration.getString("armor-json"), 4),
                 StringUtil.itemFromJson(configuration.getString("offhand-json")),
@@ -205,7 +193,7 @@ public class InventoryHistoryYAMLStorage implements InventoryHistoryStorage {
     @Override
     public InventorySnapshotSummary adjacent(InventorySnapshotSummary reference, String serverId,
                                              long fromMillis, long toMillis, boolean older) throws IOException {
-        List<InventorySnapshotSummary> matches = select(reference.getPlayerUUID(), serverId, fromMillis, toMillis, 1, reference, older);
+        List<InventorySnapshotSummary> matches = select(reference.playerUUID(), serverId, fromMillis, toMillis, 1, reference, older);
         return matches.isEmpty() ? null : matches.get(0);
     }
 
@@ -244,8 +232,8 @@ public class InventoryHistoryYAMLStorage implements InventoryHistoryStorage {
 
     @Override
     public HistoryStoredRecord exportRecord(InventorySnapshotSummary summary) throws IOException {
-        File file = snapshotFile(summary.getPlayerUUID(), summary.getId(), summary.getCreatedAt());
-        YamlConfiguration config = readMetadata(file, summary.getPlayerUUID());
+        File file = snapshotFile(summary.playerUUID(), summary.id(), summary.createdAt());
+        YamlConfiguration config = readMetadata(file, summary.playerUUID());
         if (config == null)
             return null;
         return new HistoryStoredRecord(summary, "yml", Files.readAllBytes(file.toPath()));
@@ -254,7 +242,7 @@ public class InventoryHistoryYAMLStorage implements InventoryHistoryStorage {
     @Override
     public boolean deleteRecord(HistoryStoredRecord record) throws IOException {
         InventorySnapshotSummary summary = record.getSummary();
-        Path path = snapshotFile(summary.getPlayerUUID(), summary.getId(), summary.getCreatedAt()).toPath();
+        Path path = snapshotFile(summary.playerUUID(), summary.id(), summary.createdAt()).toPath();
         if (!Files.exists(path) || Files.size(path) > Settings.HISTORY_MAX_RECORD_BYTES
                 || !Arrays.equals(Files.readAllBytes(path), record.getPayload()))
             return false;

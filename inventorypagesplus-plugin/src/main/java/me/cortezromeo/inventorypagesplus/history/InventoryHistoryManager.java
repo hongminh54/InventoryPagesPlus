@@ -5,11 +5,7 @@ import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.enums.DatabaseType;
 import me.cortezromeo.inventorypagesplus.manager.DatabaseManager;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
-import me.cortezromeo.inventorypagesplus.storage.InventoryHistorySQLStorage;
-import me.cortezromeo.inventorypagesplus.storage.InventoryHistoryStorage;
-import me.cortezromeo.inventorypagesplus.storage.InventoryHistoryYAMLStorage;
-import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDataStorage;
-import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
+import me.cortezromeo.inventorypagesplus.storage.*;
 import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import me.cortezromeo.inventorypagesplus.util.StringUtil;
 import org.bukkit.Bukkit;
@@ -25,25 +21,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.time.LocalDate;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
@@ -54,17 +35,69 @@ public class InventoryHistoryManager {
     private final Set<CompletableFuture<Boolean>> pendingSaves = ConcurrentHashMap.newKeySet();
     private final Set<String> pendingPeriodic = ConcurrentHashMap.newKeySet();
     private final Set<UUID> restoring = new HashSet<>();
+    private final AtomicBoolean maintenancePending = new AtomicBoolean();
     private ExecutorService executor;
     private InventoryHistoryStorage storage;
     private BukkitTask periodicTask;
     private BukkitTask sweepTask;
     private BukkitTask maintenanceTask;
     private HistoryRetention retention;
-    private final AtomicBoolean maintenancePending = new AtomicBoolean();
     private volatile boolean available;
     private volatile boolean initializing;
     private volatile boolean stopping;
     private boolean sweepRunning;
+
+    private static String[] serialize(InventorySnapshot snapshot) {
+        String[] json = {
+                StringUtil.pagesToJson(snapshot.getPages()),
+                StringUtil.itemsToJson(snapshot.getCreativeItems()),
+                StringUtil.itemsToJson(snapshot.getArmor(), 4),
+                StringUtil.itemToJson(snapshot.getOffhand()),
+                StringUtil.itemsToJson(snapshot.getHotbar(), 9)
+        };
+        for (String value : json)
+            if (value == null)
+                throw new IllegalStateException("Snapshot serialization failed; refusing a partial snapshot.");
+        return json;
+    }
+
+    private static String contentHash(InventorySnapshot snapshot, String[] json) throws Exception {
+        String content = json[0] + "|" + json[1] + "|" + json[2] + "|" + json[3] + "|" + json[4]
+                + "|" + snapshot.getCurrentPage() + "|" + snapshot.getMaxPage() + "|" + snapshot.isUsedCreative()
+                + "|" + HistoryDates.date(snapshot.getCreatedAt());
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(content.getBytes(StandardCharsets.UTF_8));
+        StringBuilder hash = new StringBuilder(64);
+        for (byte value : digest) {
+            hash.append(Character.forDigit((value & 255) >>> 4, 16));
+            hash.append(Character.forDigit(value & 15, 16));
+        }
+        return hash.toString();
+    }
+
+    private static ItemStack itemAt(InventorySnapshot snapshot, SnapshotSlotType type, int page, int slot) {
+        ItemStack item;
+        switch (type) {
+            case PAGE:
+                List<ItemStack> items = snapshot.getPageItems(page);
+                item = slot >= 0 && slot < items.size() ? items.get(slot) : null;
+                break;
+            case ARMOR:
+                List<ItemStack> armor = snapshot.getArmor();
+                item = slot >= 0 && slot < armor.size() ? armor.get(slot) : null;
+                break;
+            case OFFHAND:
+                item = snapshot.getOffhand();
+                break;
+            case HOTBAR:
+                List<ItemStack> hotbar = snapshot.getHotbar();
+                item = slot >= 0 && slot < hotbar.size() ? hotbar.get(slot) : null;
+                break;
+            default:
+                item = null;
+                break;
+        }
+        return item == null || item.getType().isAir() ? null : item;
+    }
 
     public boolean isAvailable() {
         return available && Settings.HISTORY_ENABLED && !stopping;
@@ -309,33 +342,6 @@ public class InventoryHistoryManager {
         return result;
     }
 
-    private static String[] serialize(InventorySnapshot snapshot) {
-        String[] json = {
-                StringUtil.pagesToJson(snapshot.getPages()),
-                StringUtil.itemsToJson(snapshot.getCreativeItems()),
-                StringUtil.itemsToJson(snapshot.getArmor(), 4),
-                StringUtil.itemToJson(snapshot.getOffhand()),
-                StringUtil.itemsToJson(snapshot.getHotbar(), 9)
-        };
-        for (String value : json)
-            if (value == null)
-                throw new IllegalStateException("Snapshot serialization failed; refusing a partial snapshot.");
-        return json;
-    }
-
-    private static String contentHash(InventorySnapshot snapshot, String[] json) throws Exception {
-        String content = json[0] + "|" + json[1] + "|" + json[2] + "|" + json[3] + "|" + json[4]
-                + "|" + snapshot.getCurrentPage() + "|" + snapshot.getMaxPage() + "|" + snapshot.isUsedCreative()
-                + "|" + HistoryDates.date(snapshot.getCreatedAt());
-        byte[] digest = MessageDigest.getInstance("SHA-256").digest(content.getBytes(StandardCharsets.UTF_8));
-        StringBuilder hash = new StringBuilder(64);
-        for (byte value : digest) {
-            hash.append(Character.forDigit((value & 255) >>> 4, 16));
-            hash.append(Character.forDigit(value & 15, 16));
-        }
-        return hash.toString();
-    }
-
     public void extractItem(Player admin, String playerUUID, String snapshotId, long createdAt,
                             SnapshotSlotType type, int page, int slot, Consumer<ItemStack> callback) {
         if (!Bukkit.isPrimaryThread()) {
@@ -385,31 +391,6 @@ public class InventoryHistoryManager {
         } catch (RejectedExecutionException exception) {
             callback.accept(null);
         }
-    }
-
-    private static ItemStack itemAt(InventorySnapshot snapshot, SnapshotSlotType type, int page, int slot) {
-        ItemStack item;
-        switch (type) {
-            case PAGE:
-                List<ItemStack> items = snapshot.getPageItems(page);
-                item = slot >= 0 && slot < items.size() ? items.get(slot) : null;
-                break;
-            case ARMOR:
-                List<ItemStack> armor = snapshot.getArmor();
-                item = slot >= 0 && slot < armor.size() ? armor.get(slot) : null;
-                break;
-            case OFFHAND:
-                item = snapshot.getOffhand();
-                break;
-            case HOTBAR:
-                List<ItemStack> hotbar = snapshot.getHotbar();
-                item = slot >= 0 && slot < hotbar.size() ? hotbar.get(slot) : null;
-                break;
-            default:
-                item = null;
-                break;
-        }
-        return item == null || item.getType().isAir() ? null : item;
     }
 
     private void schedulePeriodic() {
@@ -555,7 +536,7 @@ public class InventoryHistoryManager {
         try {
             executor.execute(() -> {
                 try {
-                    InventorySnapshot result = storage.get(summary.getPlayerUUID(), summary.getId(), summary.getCreatedAt());
+                    InventorySnapshot result = storage.get(summary.playerUUID(), summary.id(), summary.createdAt());
                     if (result != null && (!serverId.isEmpty() && !serverId.equals(result.getServerId())))
                         result = null;
                     InventorySnapshot snapshot = result;

@@ -3,13 +3,7 @@ package me.cortezromeo.inventorypagesplus.history;
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 public final class InventorySnapshot {
 
@@ -57,6 +51,32 @@ public final class InventorySnapshot {
         this.armor = copyItems(padded(armor, 4));
         this.offhand = offhand == null ? null : InventoryPagesPlus.nms.getItemStack(offhand);
         this.hotbar = copyItems(padded(hotbar, 9));
+    }
+
+    private static List<ItemStack> padded(List<ItemStack> source, int size) {
+        List<ItemStack> padded = new ArrayList<>(size);
+        for (int slot = 0; slot < size; slot++)
+            padded.add(source != null && slot < source.size() ? source.get(slot) : null);
+        return padded;
+    }
+
+    private static Map<Integer, List<ItemStack>> copyPages(Map<Integer, List<ItemStack>> source) {
+        Map<Integer, List<ItemStack>> copy = new TreeMap<>();
+        if (source != null) {
+            for (Map.Entry<Integer, List<ItemStack>> entry : source.entrySet())
+                copy.put(entry.getKey(), copyItems(entry.getValue()));
+        }
+        return Collections.unmodifiableMap(copy);
+    }
+
+    private static List<ItemStack> copyItems(List<ItemStack> source) {
+        if (source == null || source.isEmpty())
+            return Collections.emptyList();
+        List<ItemStack> copy = new ArrayList<>(source.size());
+        // Unmodifiable containers alone do not protect mutable ItemStacks.
+        for (ItemStack item : source)
+            copy.add(item == null ? null : InventoryPagesPlus.nms.getItemStack(item));
+        return Collections.unmodifiableList(copy);
     }
 
     public String getId() {
@@ -125,31 +145,5 @@ public final class InventorySnapshot {
 
     public List<ItemStack> getHotbar() {
         return copyItems(hotbar);
-    }
-
-    private static List<ItemStack> padded(List<ItemStack> source, int size) {
-        List<ItemStack> padded = new ArrayList<>(size);
-        for (int slot = 0; slot < size; slot++)
-            padded.add(source != null && slot < source.size() ? source.get(slot) : null);
-        return padded;
-    }
-
-    private static Map<Integer, List<ItemStack>> copyPages(Map<Integer, List<ItemStack>> source) {
-        Map<Integer, List<ItemStack>> copy = new TreeMap<>();
-        if (source != null) {
-            for (Map.Entry<Integer, List<ItemStack>> entry : source.entrySet())
-                copy.put(entry.getKey(), copyItems(entry.getValue()));
-        }
-        return Collections.unmodifiableMap(copy);
-    }
-
-    private static List<ItemStack> copyItems(List<ItemStack> source) {
-        if (source == null || source.isEmpty())
-            return Collections.emptyList();
-        List<ItemStack> copy = new ArrayList<>(source.size());
-        // Unmodifiable containers alone do not protect mutable ItemStacks.
-        for (ItemStack item : source)
-            copy.add(item == null ? null : InventoryPagesPlus.nms.getItemStack(item));
-        return Collections.unmodifiableList(copy);
     }
 }

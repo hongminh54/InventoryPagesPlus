@@ -3,11 +3,7 @@ package me.cortezromeo.inventorypagesplus.inventory.history;
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.file.inventory.HistoryInventoryFile;
-import me.cortezromeo.inventorypagesplus.history.InventoryHistoryManager;
-import me.cortezromeo.inventorypagesplus.history.InventorySnapshot;
-import me.cortezromeo.inventorypagesplus.history.InventorySnapshotSummary;
-import me.cortezromeo.inventorypagesplus.history.HistoryDates;
-import me.cortezromeo.inventorypagesplus.history.SnapshotSlotType;
+import me.cortezromeo.inventorypagesplus.history.*;
 import me.cortezromeo.inventorypagesplus.inventory.CustomInventoryBase;
 import me.cortezromeo.inventorypagesplus.language.Messages;
 import me.cortezromeo.inventorypagesplus.util.ItemUtil;
@@ -24,13 +20,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class InventoryHistoryGui extends CustomInventoryBase {
     // Left 5x5 grid is the virtual page; column 5 is armor, slot 6 offhand, bottom row the hotbar.
@@ -47,10 +37,11 @@ public class InventoryHistoryGui extends CustomInventoryBase {
 
     private final String targetUUID;
     private final String targetName;
-    private InventorySnapshotSummary summary;
-    private String renderedTitle;
     private final Map<Integer, String> controls = new HashMap<>();
     private final Set<String> warnings = new HashSet<>();
+    private final int initialPage;
+    private InventorySnapshotSummary summary;
+    private String renderedTitle;
     private InventorySnapshot snapshot;
     private int page;
     private boolean loading = true;
@@ -60,17 +51,63 @@ public class InventoryHistoryGui extends CustomInventoryBase {
     private int renderNumber;
     private int usedSlots;
     private UUID session;
-    private final int initialPage;
 
     public InventoryHistoryGui(Player owner, String targetUUID, String targetName,
                                InventorySnapshotSummary summary, int initialPage) {
         super(owner);
         this.targetUUID = UUID.fromString(targetUUID).toString();
-        if (summary == null || !this.targetUUID.equalsIgnoreCase(summary.getPlayerUUID()))
+        if (summary == null || !this.targetUUID.equalsIgnoreCase(summary.playerUUID()))
             throw new IllegalArgumentException("History summary belongs to a different player.");
         this.targetName = targetName;
         this.summary = summary;
         this.initialPage = initialPage;
+    }
+
+    private static void completeSnapshot(UUID viewerId, UUID session, int request,
+                                         int desiredPage, InventorySnapshot result) {
+        InventoryHistoryGui gui = activeGui(viewerId, session);
+        if (gui == null || gui.requestNumber != request)
+            return;
+        if (!gui.canView()) {
+            gui.owner.closeInventory();
+            return;
+        }
+        gui.loading = false;
+        InventorySnapshotSummary summary = gui.summary;
+        if (result == null || !gui.targetUUID.equalsIgnoreCase(result.getPlayerUUID())
+                || !summary.id().equals(result.getId()) || summary.createdAt() != result.getCreatedAt()) {
+            gui.snapshot = null;
+            MessageUtil.sendMessage(gui.owner, Messages.COMMAND_HISTORY_LOAD_FAILED);
+        } else {
+            gui.snapshot = result;
+            int desired = desiredPage >= 0 ? desiredPage : result.getCurrentPage();
+            gui.page = Math.min(desired, result.getMaxPage());
+        }
+        gui.refresh();
+    }
+
+    private static InventoryHistoryGui activeGui(UUID viewerId, UUID session) {
+        Player viewer = Bukkit.getPlayer(viewerId);
+        if (viewer == null || !viewer.isOnline())
+            return null;
+        InventoryHolder holder = viewer.getOpenInventory().getTopInventory().getHolder();
+        if (holder instanceof InventoryHistoryGui gui && session.equals(gui.session))
+            return gui;
+        return null;
+    }
+
+    private static boolean isReal(ItemStack item) {
+        return item != null && !item.getType().isAir();
+    }
+
+    private static boolean isItemSlot(int slot) {
+        for (int pageSlot : PAGE_SLOTS)
+            if (pageSlot == slot)
+                return true;
+        for (int armorSlot : ARMOR_SLOTS)
+            if (armorSlot == slot)
+                return true;
+        return slot == OFFHAND_SLOT || (slot >= HOTBAR_START && slot < HOTBAR_START + 9);
     }
 
     @Override
@@ -290,9 +327,9 @@ public class InventoryHistoryGui extends CustomInventoryBase {
                     gui.actionQueued = false;
                     MessageUtil.sendMessage(gui.owner, taken != null
                             ? Messages.COMMAND_HISTORY_EXTRACT_SUCCESS
-                                    .replace("%player%", gui.targetName)
-                                    .replace("%item%", taken.getType().name())
-                                    .replace("%amount%", String.valueOf(taken.getAmount()))
+                            .replace("%player%", gui.targetName)
+                            .replace("%item%", taken.getType().name())
+                            .replace("%amount%", String.valueOf(taken.getAmount()))
                             : Messages.COMMAND_HISTORY_EXTRACT_FAILED);
                 });
     }
@@ -302,7 +339,7 @@ public class InventoryHistoryGui extends CustomInventoryBase {
         UUID viewerId = owner.getUniqueId();
         UUID expectedSession = session;
         int request = ++requestNumber;
-        LocalDate date = HistoryDates.date(summary.getCreatedAt());
+        LocalDate date = HistoryDates.date(summary.createdAt());
         long from = otherDay ? (older ? HistoryDates.cutoff() : HistoryDates.start(date.plusDays(1))) : HistoryDates.start(date);
         long to = otherDay ? (older ? HistoryDates.start(date) : Long.MAX_VALUE) : HistoryDates.start(date.plusDays(1));
         InventoryPagesPlus.getHistoryManager().loadAdjacent(summary, from, to, older, result -> {
@@ -332,39 +369,6 @@ public class InventoryHistoryGui extends CustomInventoryBase {
         int request = ++requestNumber;
         InventoryPagesPlus.getHistoryManager().loadSnapshot(summary,
                 result -> completeSnapshot(viewerId, expectedSession, request, desiredPage, result));
-    }
-
-    private static void completeSnapshot(UUID viewerId, UUID session, int request,
-                                         int desiredPage, InventorySnapshot result) {
-        InventoryHistoryGui gui = activeGui(viewerId, session);
-        if (gui == null || gui.requestNumber != request)
-            return;
-        if (!gui.canView()) {
-            gui.owner.closeInventory();
-            return;
-        }
-        gui.loading = false;
-        InventorySnapshotSummary summary = gui.summary;
-        if (result == null || !gui.targetUUID.equalsIgnoreCase(result.getPlayerUUID())
-                || !summary.getId().equals(result.getId()) || summary.getCreatedAt() != result.getCreatedAt()) {
-            gui.snapshot = null;
-            MessageUtil.sendMessage(gui.owner, Messages.COMMAND_HISTORY_LOAD_FAILED);
-        } else {
-            gui.snapshot = result;
-            int desired = desiredPage >= 0 ? desiredPage : result.getCurrentPage();
-            gui.page = Math.min(desired, result.getMaxPage());
-        }
-        gui.refresh();
-    }
-
-    private static InventoryHistoryGui activeGui(UUID viewerId, UUID session) {
-        Player viewer = Bukkit.getPlayer(viewerId);
-        if (viewer == null || !viewer.isOnline())
-            return null;
-        InventoryHolder holder = viewer.getOpenInventory().getTopInventory().getHolder();
-        if (holder instanceof InventoryHistoryGui gui && session.equals(gui.session))
-            return gui;
-        return null;
     }
 
     private void refresh() {
@@ -450,20 +454,6 @@ public class InventoryHistoryGui extends CustomInventoryBase {
                         .replace("%player%", gui.targetName));
             gui.refresh();
         });
-    }
-
-    private static boolean isReal(ItemStack item) {
-        return item != null && !item.getType().isAir();
-    }
-
-    private static boolean isItemSlot(int slot) {
-        for (int pageSlot : PAGE_SLOTS)
-            if (pageSlot == slot)
-                return true;
-        for (int armorSlot : ARMOR_SLOTS)
-            if (armorSlot == slot)
-                return true;
-        return slot == OFFHAND_SLOT || (slot >= HOTBAR_START && slot < HOTBAR_START + 9);
     }
 
     private int[] itemAddress(int rawSlot) {
@@ -570,7 +560,7 @@ public class InventoryHistoryGui extends CustomInventoryBase {
     }
 
     private String applyPlaceholders(String text) {
-        String date = HistoryDates.format(HistoryDates.date(summary.getCreatedAt()));
+        String date = HistoryDates.format(HistoryDates.date(summary.createdAt()));
         long maxPage = snapshot == null ? 1L : Math.max(1L, (long) snapshot.getMaxPage() + 1L);
         String extractStatus = Settings.HISTORY_EXTRACTION_ENABLED && owner.hasPermission(Settings.HISTORY_PERMISSION_RESTORE)
                 ? Messages.COMMAND_HISTORY_EXTRACT_HINT : Messages.COMMAND_HISTORY_EXTRACT_VIEW_ONLY;

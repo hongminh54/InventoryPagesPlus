@@ -21,6 +21,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DatabaseManager implements InventoryPagesPlusDataManager {
 
     private static final ReentrantLock storageLock = new ReentrantLock();
+    public static File crashedFile = new File(InventoryPagesPlus.plugin.getDataFolder() + "/database/crashed.yml");
+    public static FileConfiguration crashedData = YamlConfiguration.loadConfiguration(crashedFile);
+    private final ConcurrentHashMap<String, PlayerInventoryDatabase> playerInventoryDatabase = new ConcurrentHashMap<>();
+    private final HashMap<String, String> tempPlayerUUID = new HashMap<>(); // mainly use for loading old database which already was created
+    public DatabaseManager() {
+    }
 
     public static boolean runIfStorageIdle(Runnable action) {
         if (!storageLock.tryLock())
@@ -31,13 +37,6 @@ public class DatabaseManager implements InventoryPagesPlusDataManager {
         } finally {
             storageLock.unlock();
         }
-    }
-
-    public static File crashedFile = new File(InventoryPagesPlus.plugin.getDataFolder() + "/database/crashed.yml");
-    public static FileConfiguration crashedData = YamlConfiguration.loadConfiguration(crashedFile);
-    private final ConcurrentHashMap<String, PlayerInventoryDatabase> playerInventoryDatabase = new ConcurrentHashMap<>();
-    private final HashMap<String, String> tempPlayerUUID = new HashMap<>(); // mainly use for loading old database which already was created
-    public DatabaseManager() {
     }
 
     @Override

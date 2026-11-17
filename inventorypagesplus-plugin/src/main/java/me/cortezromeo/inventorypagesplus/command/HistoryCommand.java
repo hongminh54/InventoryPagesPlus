@@ -22,12 +22,7 @@ import org.bukkit.util.StringUtil;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class HistoryCommand implements CommandExecutor, TabExecutor {
     private final Map<UUID, UUID> requests = new HashMap<>();
@@ -265,12 +260,12 @@ public class HistoryCommand implements CommandExecutor, TabExecutor {
             return;
         }
         for (InventorySnapshotSummary summary : summaries) {
-            if (summary == null || !targetUUID.equalsIgnoreCase(summary.getPlayerUUID())) {
+            if (summary == null || !targetUUID.equalsIgnoreCase(summary.playerUUID())) {
                 MessageUtil.sendMessage(viewer, Messages.COMMAND_HISTORY_LOAD_FAILED);
                 return;
             }
         }
-        if (initialPage > summaries.get(0).getMaxPage()) {
+        if (initialPage > summaries.get(0).maxPage()) {
             MessageUtil.sendMessage(viewer, Messages.COMMAND_HISTORY_INVALID_PAGE);
             return;
         }

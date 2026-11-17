@@ -11,7 +11,15 @@ public final class HistoryStoredRecord {
         this.payload = payload;
     }
 
-    public InventorySnapshotSummary getSummary() { return summary; }
-    public byte[] getPayload() { return payload; }
-    public String entryName() { return summary.getPlayerUUID() + "/" + summary.getId() + "." + extension; }
+    public InventorySnapshotSummary getSummary() {
+        return summary;
+    }
+
+    public byte[] getPayload() {
+        return payload;
+    }
+
+    public String entryName() {
+        return summary.playerUUID() + "/" + summary.id() + "." + extension;
+    }
 }

@@ -1,10 +1,9 @@
 package me.cortezromeo.inventorypagesplus;
 
+import me.cortezromeo.inventorypagesplus.history.HistoryDates;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
 import me.cortezromeo.inventorypagesplus.manager.ProtectionManager;
 import org.bukkit.configuration.file.FileConfiguration;
-
-import me.cortezromeo.inventorypagesplus.history.HistoryDates;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -13,6 +12,10 @@ import java.util.List;
 
 public class Settings {
 
+    public static final String HISTORY_PERMISSION = "inventorypagesplus.history";
+    public static final String HISTORY_PERMISSION_OTHERS = "inventorypagesplus.history.others";
+    public static final String HISTORY_PERMISSION_SAVE = "inventorypagesplus.history.save";
+    public static final String HISTORY_PERMISSION_RESTORE = "inventorypagesplus.history.restore";
     public static String DATABASE_TYPE;
     public static String DATABASE_SETTINGS_H2_FILE_NAME;
     public static String DATABASE_SETTINGS_H2_TABLE;
@@ -52,7 +55,6 @@ public class Settings {
     public static int PROTECTION_MAX_ATTEMPTS;
     public static long PROTECTION_BAN_SECONDS;
     public static List<String> PROTECTION_COMMAND_BLACKLIST = new ArrayList<>();
-
     public static boolean HISTORY_ENABLED;
     public static String HISTORY_SERVER_ID;
     public static int HISTORY_SNAPSHOT_INTERVAL_SECONDS;
@@ -73,10 +75,6 @@ public class Settings {
     public static ZoneId HISTORY_ZONE = ZoneId.systemDefault();
     public static boolean HISTORY_RESTORE_ENABLED;
     public static boolean HISTORY_EXTRACTION_ENABLED;
-    public static final String HISTORY_PERMISSION = "inventorypagesplus.history";
-    public static final String HISTORY_PERMISSION_OTHERS = "inventorypagesplus.history.others";
-    public static final String HISTORY_PERMISSION_SAVE = "inventorypagesplus.history.save";
-    public static final String HISTORY_PERMISSION_RESTORE = "inventorypagesplus.history.restore";
     public static String DATABASE_SETTINGS_H2_HISTORY_TABLE;
     public static String DATABASE_SETTINGS_MYSQL_HISTORY_TABLE;
 

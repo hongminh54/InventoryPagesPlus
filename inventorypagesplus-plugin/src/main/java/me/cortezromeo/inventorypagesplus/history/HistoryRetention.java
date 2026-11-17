@@ -7,18 +7,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Iterator;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -71,13 +62,13 @@ public final class HistoryRetention implements AutoCloseable {
         long newest = 0;
         for (HistoryStoredRecord record : records) {
             InventorySnapshotSummary summary = record.getSummary();
-            UUID.fromString(summary.getPlayerUUID());
-            UUID.fromString(summary.getId());
+            UUID.fromString(summary.playerUUID());
+            UUID.fromString(summary.id());
             if (!record.entryName().matches("[a-fA-F0-9-]{36}/[a-fA-F0-9-]{36}\\.(json|yml)"))
                 throw new IOException("Invalid history archive entry name.");
             digest.update(record.entryName().getBytes(StandardCharsets.UTF_8));
             digest.update(record.getPayload());
-            newest = Math.max(newest, summary.getCreatedAt());
+            newest = Math.max(newest, summary.createdAt());
         }
         StringBuilder hash = new StringBuilder();
         for (byte value : digest.digest()) {

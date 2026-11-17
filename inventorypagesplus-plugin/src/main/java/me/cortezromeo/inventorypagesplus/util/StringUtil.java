@@ -13,12 +13,7 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class StringUtil {
 
@@ -45,7 +40,8 @@ public class StringUtil {
             return pages;
         try {
             HashMap<Integer, ArrayList<String>> encoded = new Gson().fromJson(json,
-                    new TypeToken<HashMap<Integer, ArrayList<String>>>() { }.getType());
+                    new TypeToken<HashMap<Integer, ArrayList<String>>>() {
+                    }.getType());
             if (encoded == null)
                 throw new IllegalArgumentException("pages JSON is null");
             for (Map.Entry<Integer, ArrayList<String>> entry : encoded.entrySet()) {
@@ -84,7 +80,8 @@ public class StringUtil {
         if (json == null || json.isEmpty())
             return new ArrayList<>();
         try {
-            ArrayList<String> encoded = new Gson().fromJson(json, new TypeToken<ArrayList<String>>() { }.getType());
+            ArrayList<String> encoded = new Gson().fromJson(json, new TypeToken<ArrayList<String>>() {
+            }.getType());
             if (encoded == null)
                 throw new IllegalArgumentException("history items JSON is null");
             return decodeItems(encoded, size);

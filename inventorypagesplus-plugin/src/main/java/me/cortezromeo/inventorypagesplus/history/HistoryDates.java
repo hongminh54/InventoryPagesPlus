@@ -11,7 +11,8 @@ import java.time.format.ResolverStyle;
 import java.util.Locale;
 
 public final class HistoryDates {
-    private HistoryDates() { }
+    private HistoryDates() {
+    }
 
     public static DateTimeFormatter formatter(String pattern) {
         if (pattern == null || !pattern.matches("[dMyu./_-]{8,16}") || !pattern.matches(".*[./_-].*")
