@@ -4,6 +4,10 @@ import me.cortezromeo.inventorypagesplus.manager.DebugManager;
 import me.cortezromeo.inventorypagesplus.manager.ProtectionManager;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import me.cortezromeo.inventorypagesplus.history.HistoryDates;
+
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +52,33 @@ public class Settings {
     public static int PROTECTION_MAX_ATTEMPTS;
     public static long PROTECTION_BAN_SECONDS;
     public static List<String> PROTECTION_COMMAND_BLACKLIST = new ArrayList<>();
+
+    public static boolean HISTORY_ENABLED;
+    public static String HISTORY_SERVER_ID;
+    public static int HISTORY_SNAPSHOT_INTERVAL_SECONDS;
+    public static int HISTORY_SNAPSHOT_PLAYERS_PER_TICK;
+    public static boolean HISTORY_SNAPSHOT_ON_JOIN;
+    public static boolean HISTORY_SNAPSHOT_ON_QUIT;
+    public static boolean HISTORY_SNAPSHOT_ON_DISABLE;
+    public static boolean HISTORY_SNAPSHOT_BEFORE_CLEAR;
+    public static int HISTORY_RETENTION_MONTHS = 3;
+    public static boolean HISTORY_RETENTION_ARCHIVE = true;
+    public static int HISTORY_RETENTION_BATCH_SIZE = 50;
+    public static int HISTORY_RETENTION_INTERVAL_SECONDS = 60;
+    public static int HISTORY_ARCHIVE_KEEP_MONTHS = 12;
+    public static int HISTORY_MAX_PENDING = 64;
+    public static int HISTORY_MAX_RECORD_BYTES = 8 * 1024 * 1024;
+    public static String HISTORY_DATE_FORMAT = "dd-MM-yyyy";
+    public static DateTimeFormatter HISTORY_DATE_FORMATTER = HistoryDates.formatter(HISTORY_DATE_FORMAT);
+    public static ZoneId HISTORY_ZONE = ZoneId.systemDefault();
+    public static boolean HISTORY_RESTORE_ENABLED;
+    public static boolean HISTORY_EXTRACTION_ENABLED;
+    public static final String HISTORY_PERMISSION = "inventorypagesplus.history";
+    public static final String HISTORY_PERMISSION_OTHERS = "inventorypagesplus.history.others";
+    public static final String HISTORY_PERMISSION_SAVE = "inventorypagesplus.history.save";
+    public static final String HISTORY_PERMISSION_RESTORE = "inventorypagesplus.history.restore";
+    public static String DATABASE_SETTINGS_H2_HISTORY_TABLE;
+    public static String DATABASE_SETTINGS_MYSQL_HISTORY_TABLE;
 
     public static void setupValue() {
         DebugManager.debug("SETTINGS", "Loading settings from config yaml...");
@@ -105,6 +136,43 @@ public class Settings {
             if (!command.isEmpty())
                 PROTECTION_COMMAND_BLACKLIST.add(command);
         }
+        HISTORY_ENABLED = configuration.getBoolean("history.enabled", true);
+        String serverId = configuration.getString("history.server-id", "");
+        HISTORY_SERVER_ID = serverId == null ? "" : serverId.trim();
+        HISTORY_SNAPSHOT_INTERVAL_SECONDS = Math.max(0, configuration.getInt("history.snapshot.interval-seconds", 3600));
+        HISTORY_SNAPSHOT_PLAYERS_PER_TICK = Math.max(1, configuration.getInt("history.snapshot.players-per-tick", 1));
+        HISTORY_SNAPSHOT_ON_JOIN = configuration.getBoolean("history.snapshot.on-join", true);
+        HISTORY_SNAPSHOT_ON_QUIT = configuration.getBoolean("history.snapshot.on-quit", true);
+        HISTORY_SNAPSHOT_ON_DISABLE = configuration.getBoolean("history.snapshot.on-disable", true);
+        HISTORY_SNAPSHOT_BEFORE_CLEAR = configuration.getBoolean("history.snapshot.before-clear", true);
+        HISTORY_RETENTION_MONTHS = Math.max(1, Math.min(3, configuration.getInt("history.retention.months", 3)));
+        String retentionAction = configuration.getString("history.retention.action", "ZIP");
+        HISTORY_RETENTION_ARCHIVE = !"DELETE".equalsIgnoreCase(retentionAction);
+        if (!"ZIP".equalsIgnoreCase(retentionAction) && !"DELETE".equalsIgnoreCase(retentionAction))
+            InventoryPagesPlus.plugin.getLogger().warning("Invalid history.retention.action; using ZIP.");
+        HISTORY_RETENTION_BATCH_SIZE = Math.max(1, Math.min(200, configuration.getInt("history.retention.batch-size", 50)));
+        HISTORY_RETENTION_INTERVAL_SECONDS = Math.max(10, configuration.getInt("history.retention.interval-seconds", 60));
+        HISTORY_ARCHIVE_KEEP_MONTHS = Math.max(0, configuration.getInt("history.retention.archive-keep-months", 12));
+        HISTORY_MAX_PENDING = Math.max(16, Math.min(1024, configuration.getInt("history.performance.max-pending-tasks", 64)));
+        HISTORY_MAX_RECORD_BYTES = Math.max(1, Math.min(32, configuration.getInt("history.performance.max-record-megabytes", 8))) * 1024 * 1024;
+        try {
+            HISTORY_DATE_FORMAT = configuration.getString("history.date-format", "dd-MM-yyyy");
+            HISTORY_DATE_FORMATTER = HistoryDates.formatter(HISTORY_DATE_FORMAT);
+        } catch (RuntimeException exception) {
+            HISTORY_DATE_FORMAT = "dd-MM-yyyy";
+            HISTORY_DATE_FORMATTER = HistoryDates.formatter(HISTORY_DATE_FORMAT);
+            InventoryPagesPlus.plugin.getLogger().warning("Invalid history.date-format; using dd-MM-yyyy.");
+        }
+        try {
+            HISTORY_ZONE = ZoneId.of(configuration.getString("history.time-zone", ZoneId.systemDefault().getId()));
+        } catch (RuntimeException exception) {
+            HISTORY_ZONE = ZoneId.systemDefault();
+            InventoryPagesPlus.plugin.getLogger().warning("Invalid history.time-zone; using " + HISTORY_ZONE);
+        }
+        HISTORY_RESTORE_ENABLED = configuration.getBoolean("history.restore.enabled", false);
+        HISTORY_EXTRACTION_ENABLED = configuration.getBoolean("history.extraction.enabled", true);
+        DATABASE_SETTINGS_H2_HISTORY_TABLE = configuration.getString("database.settings.h2.history-table", "inventoryhistory");
+        DATABASE_SETTINGS_MYSQL_HISTORY_TABLE = configuration.getString("database.settings.mysql.database.history-table", "inventoryhistory");
         DebugManager.debug("SETTINGS", "Loaded settings from config yaml.");
     }
 

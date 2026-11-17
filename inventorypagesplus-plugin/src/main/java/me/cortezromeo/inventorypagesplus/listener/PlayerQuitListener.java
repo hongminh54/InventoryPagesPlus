@@ -1,6 +1,8 @@
 package me.cortezromeo.inventorypagesplus.listener;
 
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
+import me.cortezromeo.inventorypagesplus.Settings;
+import me.cortezromeo.inventorypagesplus.history.SnapshotReason;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 import org.bukkit.Bukkit;
@@ -25,6 +27,9 @@ public class PlayerQuitListener implements Listener {
             boolean wasLocked = data.isProtectionLocked();
 
             InventoryPagesPlus.getDatabaseManager().savePlayerInventory(player.getName());
+            if (Settings.HISTORY_ENABLED && Settings.HISTORY_SNAPSHOT_ON_QUIT
+                    && InventoryPagesPlus.getHistoryManager() != null)
+                InventoryPagesPlus.getHistoryManager().capture(data, SnapshotReason.QUIT, false, player);
 
             // While locked, slots 9..35 hold the player's real items; clearing them would delete real items.
             if (!wasLocked)

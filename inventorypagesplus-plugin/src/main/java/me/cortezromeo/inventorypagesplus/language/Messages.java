@@ -67,6 +67,34 @@ public class Messages {
     public static String COMMAND_PROTECTION_ADMIN_RESET_TARGET;
     public static String COMMAND_PROTECTION_COMMAND_BLOCKED;
 
+    public static String COMMAND_HISTORY_USAGE;
+    public static String COMMAND_HISTORY_DISABLED;
+    public static String COMMAND_HISTORY_NO_PERMISSION;
+    public static String COMMAND_HISTORY_NO_PERMISSION_OTHERS;
+    public static String COMMAND_HISTORY_NO_SNAPSHOTS;
+    public static String COMMAND_HISTORY_LOADING;
+    public static String COMMAND_HISTORY_LOAD_FAILED;
+    public static String COMMAND_HISTORY_SNAPSHOT_SAVED;
+    public static String COMMAND_HISTORY_SNAPSHOT_SAVE_FAILED;
+    public static String COMMAND_HISTORY_SAVE_ALL_STARTED;
+    public static String COMMAND_HISTORY_SAVE_ALL_COMPLETE;
+    public static String COMMAND_HISTORY_SAVE_ALL_RUNNING;
+    public static String COMMAND_HISTORY_SAVE_ALL_EMPTY;
+    public static String COMMAND_HISTORY_RESTORE_DISABLED;
+    public static String COMMAND_HISTORY_RESTORE_NO_PERMISSION;
+    public static String COMMAND_HISTORY_RESTORE_SUCCESS;
+    public static String COMMAND_HISTORY_RESTORE_FAILED;
+    public static String COMMAND_HISTORY_EXTRACT_DISABLED;
+    public static String COMMAND_HISTORY_EXTRACT_NO_PERMISSION;
+    public static String COMMAND_HISTORY_EXTRACT_SUCCESS;
+    public static String COMMAND_HISTORY_EXTRACT_FAILED;
+    public static String COMMAND_HISTORY_EXTRACT_HINT;
+    public static String COMMAND_HISTORY_EXTRACT_VIEW_ONLY;
+    public static String COMMAND_HISTORY_PLAYER_NOT_FOUND;
+    public static String COMMAND_HISTORY_INVALID_PAGE;
+    public static String COMMAND_HISTORY_INVALID_DATE;
+    public static String COMMAND_HISTORY_NO_MORE;
+
     public static void setupValue(String locale) {
         locale = locale.toLowerCase();
         File messageFile = new File(InventoryPagesPlus.plugin.getDataFolder() + "/languages/messages_" + locale + ".yml");
@@ -137,6 +165,34 @@ public class Messages {
         COMMAND_PROTECTION_ADMIN_RESET = fileConfiguration.getString("messages.commands.protection.admin-reset");
         COMMAND_PROTECTION_ADMIN_RESET_TARGET = fileConfiguration.getString("messages.commands.protection.admin-reset-target");
         COMMAND_PROTECTION_COMMAND_BLOCKED = fileConfiguration.getString("messages.commands.protection.command-blocked");
+
+        COMMAND_HISTORY_USAGE = fileConfiguration.getString("messages.commands.history.date-usage");
+        COMMAND_HISTORY_DISABLED = fileConfiguration.getString("messages.commands.history.disabled");
+        COMMAND_HISTORY_NO_PERMISSION = fileConfiguration.getString("messages.commands.history.no-permission");
+        COMMAND_HISTORY_NO_PERMISSION_OTHERS = fileConfiguration.getString("messages.commands.history.no-permission-others");
+        COMMAND_HISTORY_NO_SNAPSHOTS = fileConfiguration.getString("messages.commands.history.no-history");
+        COMMAND_HISTORY_LOADING = fileConfiguration.getString("messages.commands.history.loading");
+        COMMAND_HISTORY_LOAD_FAILED = fileConfiguration.getString("messages.commands.history.load-failed");
+        COMMAND_HISTORY_SNAPSHOT_SAVED = fileConfiguration.getString("messages.commands.history.saved");
+        COMMAND_HISTORY_SNAPSHOT_SAVE_FAILED = fileConfiguration.getString("messages.commands.history.save-failed");
+        COMMAND_HISTORY_SAVE_ALL_STARTED = fileConfiguration.getString("messages.commands.history.save-all-started");
+        COMMAND_HISTORY_SAVE_ALL_COMPLETE = fileConfiguration.getString("messages.commands.history.save-all-complete");
+        COMMAND_HISTORY_SAVE_ALL_RUNNING = fileConfiguration.getString("messages.commands.history.save-all-running");
+        COMMAND_HISTORY_SAVE_ALL_EMPTY = fileConfiguration.getString("messages.commands.history.save-all-empty");
+        COMMAND_HISTORY_RESTORE_DISABLED = fileConfiguration.getString("messages.commands.history.restore-disabled");
+        COMMAND_HISTORY_RESTORE_NO_PERMISSION = fileConfiguration.getString("messages.commands.history.restore-state-no-permission");
+        COMMAND_HISTORY_RESTORE_SUCCESS = fileConfiguration.getString("messages.commands.history.restore-state-success");
+        COMMAND_HISTORY_RESTORE_FAILED = fileConfiguration.getString("messages.commands.history.restore-state-failed");
+        COMMAND_HISTORY_EXTRACT_DISABLED = fileConfiguration.getString("messages.commands.history.copy-disabled");
+        COMMAND_HISTORY_EXTRACT_NO_PERMISSION = fileConfiguration.getString("messages.commands.history.copy-no-permission");
+        COMMAND_HISTORY_EXTRACT_SUCCESS = fileConfiguration.getString("messages.commands.history.copy-success");
+        COMMAND_HISTORY_EXTRACT_FAILED = fileConfiguration.getString("messages.commands.history.copy-failed");
+        COMMAND_HISTORY_EXTRACT_HINT = fileConfiguration.getString("messages.commands.history.copy-hint");
+        COMMAND_HISTORY_EXTRACT_VIEW_ONLY = fileConfiguration.getString("messages.commands.history.extract-view-only");
+        COMMAND_HISTORY_PLAYER_NOT_FOUND = fileConfiguration.getString("messages.commands.history.player-not-found");
+        COMMAND_HISTORY_INVALID_PAGE = fileConfiguration.getString("messages.commands.history.invalid-page");
+        COMMAND_HISTORY_INVALID_DATE = fileConfiguration.getString("messages.commands.history.invalid-date");
+        COMMAND_HISTORY_NO_MORE = fileConfiguration.getString("messages.commands.history.no-more");
 
         DebugManager.debug("LOADING MESSAGES", "Loaded message file name: " + locale + ".");
     }

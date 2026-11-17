@@ -34,6 +34,10 @@ public abstract class CustomInventoryBase implements InventoryHolder {
 
     public abstract void setMenuItems();
 
+    public boolean isReadOnly() {
+        return false;
+    }
+
     public Player getOwner() {
         return owner;
     }

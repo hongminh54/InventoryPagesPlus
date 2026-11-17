@@ -31,7 +31,24 @@ commands:
     description: Set pages' item slot
   invsee:
     description: See inventory of other players
+  invhistory:
+    description: View inventory page history of a player
+    aliases:
+      - pagehistory
   baove:
     description: Protect your inventory pages with a PIN
     aliases:
       - pageprotect
+permissions:
+  inventorypagesplus.history:
+    description: Allows viewing inventory page history
+    default: op
+  inventorypagesplus.history.others:
+    description: Allows viewing history of other players
+    default: op
+  inventorypagesplus.history.save:
+    description: Allows creating a manual snapshot
+    default: op
+  inventorypagesplus.history.restore:
+    description: Allows restoring a snapshot
+    default: op

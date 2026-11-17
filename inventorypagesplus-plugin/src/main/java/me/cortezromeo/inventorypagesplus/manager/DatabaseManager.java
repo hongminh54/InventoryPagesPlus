@@ -16,8 +16,22 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class DatabaseManager implements InventoryPagesPlusDataManager {
+
+    private static final ReentrantLock storageLock = new ReentrantLock();
+
+    public static boolean runIfStorageIdle(Runnable action) {
+        if (!storageLock.tryLock())
+            return false;
+        try {
+            action.run();
+            return true;
+        } finally {
+            storageLock.unlock();
+        }
+    }
 
     public static File crashedFile = new File(InventoryPagesPlus.plugin.getDataFolder() + "/database/crashed.yml");
     public static FileConfiguration crashedData = YamlConfiguration.loadConfiguration(crashedFile);
@@ -139,8 +153,13 @@ public class DatabaseManager implements InventoryPagesPlusDataManager {
     public void savePlayerInventory(String playerName) {
         DebugManager.debug("SAVING DATABASE PLAYER (" + playerName + ")", "Saving player's database...");
         long time = System.currentTimeMillis();
-        saveCurrentPage(playerName);
-        PlayerInventoryDataStorage.savePlayerInventoryData(playerInventoryDatabase.get(PlayerInventoryDataStorage.getPlayerUUIDFromData(playerName, true)));
+        storageLock.lock();
+        try {
+            saveCurrentPage(playerName);
+            PlayerInventoryDataStorage.savePlayerInventoryData(playerInventoryDatabase.get(PlayerInventoryDataStorage.getPlayerUUIDFromData(playerName, true)));
+        } finally {
+            storageLock.unlock();
+        }
         DebugManager.debug("SAVING DATABASE PLAYER (" + playerName + ")", "Completed with no issues. &b&l(" + (System.currentTimeMillis() - time + "ms)"));
     }
 
@@ -148,15 +167,25 @@ public class DatabaseManager implements InventoryPagesPlusDataManager {
     public void saveCurrentPage(String playerName) {
         long time = System.currentTimeMillis();
         String playerUUID = PlayerInventoryDataStorage.getPlayerUUIDFromData(playerName, true);
-        if (playerInventoryDatabase.containsKey(playerUUID)) {
-            playerInventoryDatabase.get(playerUUID).saveCurrentPage();
+        storageLock.lock();
+        try {
+            if (playerInventoryDatabase.containsKey(playerUUID)) {
+                playerInventoryDatabase.get(playerUUID).saveCurrentPage();
+            }
+        } finally {
+            storageLock.unlock();
         }
     }
 
     @Override
     public void saveCurrentPage(UUID UUID) {
-        if (playerInventoryDatabase.containsKey(UUID.toString())) {
-            playerInventoryDatabase.get(UUID.toString()).saveCurrentPage();
+        storageLock.lock();
+        try {
+            if (playerInventoryDatabase.containsKey(UUID.toString())) {
+                playerInventoryDatabase.get(UUID.toString()).saveCurrentPage();
+            }
+        } finally {
+            storageLock.unlock();
         }
     }
 

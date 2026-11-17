@@ -9,6 +9,7 @@ import me.cortezromeo.inventorypagesplus.manager.DebugManager;
 import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import me.cortezromeo.inventorypagesplus.util.StringUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.nio.charset.StandardCharsets;
@@ -16,6 +17,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
     private static Connection connection;
@@ -82,7 +84,7 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
             }
             rs.close();
         } catch (Exception exception) {
-            exception.printStackTrace();
+            InventoryPagesPlus.plugin.getLogger().log(Level.WARNING, "Unable to check MySQL inventory UUID.", exception);
         }
         return false;
     }
@@ -94,7 +96,7 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
             try (PreparedStatement ps = connection.prepareStatement(cmd)) {
                 ps.execute();
             } catch (Exception e) {
-                e.printStackTrace();
+                InventoryPagesPlus.plugin.getLogger().log(Level.WARNING, "Unable to initialize MySQL inventory.", e);
             }
         });
     }
@@ -122,11 +124,15 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
     }
 
     public PlayerInventoryDatabase fromMySQL(String playerName, String playerUUID) {
+        return fromMySQL(playerName, playerUUID, Bukkit.getPlayer(playerName));
+    }
+
+    public PlayerInventoryDatabase fromMySQL(String playerName, String playerUUID, Player player) {
         HashMap<Integer, ArrayList<ItemStack>> pageItemHashMap = new HashMap<>();
         int maxPageDefault = Settings.INVENTORY_SETTINGS_MAX_PAGE_DEFAULT;
         if (maxPageDefault < 0)
             maxPageDefault = 0;
-        PlayerInventoryDatabase data = new PlayerInventory(Bukkit.getPlayer(playerName), playerName, playerUUID, maxPageDefault, null, null, PlayerPageInventory.prevItem, PlayerPageInventory.prevPos, PlayerPageInventory.nextItem, PlayerPageInventory.nextPos, PlayerPageInventory.noPageItem);
+        PlayerInventoryDatabase data = new PlayerInventory(player, playerName, playerUUID, maxPageDefault, null, null, PlayerPageInventory.prevItem, PlayerPageInventory.prevPos, PlayerPageInventory.nextItem, PlayerPageInventory.nextPos, PlayerPageInventory.noPageItem);
 
         if (!hasDataUUID(playerUUID))
             return data;
@@ -192,7 +198,7 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
             data.setPlayerUUID(playerUUID);
 
         } catch (Exception exception) {
-            exception.printStackTrace();
+            InventoryPagesPlus.plugin.getLogger().log(Level.WARNING, "Unable to load MySQL inventory.", exception);
         }
         return data;
     }
@@ -260,6 +266,10 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
 
     @Override
     public void saveData(PlayerInventoryDatabase playerInventoryData) {
+        saveDataChecked(playerInventoryData);
+    }
+
+    public boolean saveDataChecked(PlayerInventoryDatabase playerInventoryData) {
         if (!hasDataUUID(playerInventoryData.getPlayerUUID()))
             initData(playerInventoryData.getPlayerUUID());
 
@@ -287,7 +297,10 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
                     itemStack = InventoryPagesPlus.nms.getItemStack(itemStack);
                     if (itemStack != null)
                         emptyPage = false;
-                    itemsBase64.add(StringUtil.toBase64(itemStack));
+                    String encoded = StringUtil.toBase64(itemStack);
+                    if (itemStack != null && encoded == null)
+                        throw new IllegalStateException("Unable to encode a non-null page item.");
+                    itemsBase64.add(encoded);
                 }
                 if (!emptyPage)
                     pageItemsBase64.put(page, itemsBase64);
@@ -300,7 +313,10 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
                 ArrayList<String> creativeItemsBase64 = new ArrayList<>();
                 for (ItemStack itemStack : playerInventoryData.getCreativeItems()) {
                     itemStack = InventoryPagesPlus.nms.getItemStack(itemStack);
-                    creativeItemsBase64.add(StringUtil.toBase64(itemStack));
+                    String encoded = StringUtil.toBase64(itemStack);
+                    if (itemStack != null && encoded == null)
+                        throw new IllegalStateException("Unable to encode a non-null creative item.");
+                    creativeItemsBase64.add(encoded);
                 }
                 preparedStatement.setString(3, gson.toJson(creativeItemsBase64));
             } else
@@ -313,9 +329,10 @@ public class PlayerInventoryDataMySQLStorage implements PlayerInventoryStorage {
             preparedStatement.setInt(9, playerInventoryData.getProtectionAttempts());
             preparedStatement.setLong(10, playerInventoryData.getProtectionBanUntil());
             preparedStatement.setString(11, playerInventoryData.getPlayerUUID());
-            preparedStatement.executeUpdate();
+            return preparedStatement.executeUpdate() == 1;
         } catch (Exception e) {
-            e.printStackTrace();
+            InventoryPagesPlus.plugin.getLogger().log(Level.WARNING, "Unable to save MySQL inventory.", e);
+            return false;
         }
     }
 

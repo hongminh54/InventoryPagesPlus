@@ -1,0 +1,113 @@
+# Full inventory history: page on the left, equipment above, hotbar below.
+# Controls: day 15/24, change 16/17, page 25/26, restore 34, close 43.
+# Placeholders: %player%, %date%, %page%, %max_page%, %used_slots%, %extract_status%.
+# Dates use history.date-format and history.time-zone. Copying never changes history.
+title: '&0%player% &8| &0%date%'
+items:
+  border:
+    type: MATERIAL
+    value: BLACK_STAINED_GLASS_PANE
+    name: ' '
+    slots: [8, 33, 35, 41, 42, 44]
+  close:
+    direct: close
+    type: MATERIAL
+    value: BARRIER
+    name: '&#fc3103Close'
+    slot: 43
+  prevDay:
+    direct: prevDay
+    type: MATERIAL
+    value: PAPER
+    name: '&#55ff00Previous day'
+    lore:
+      - '&fDate: %date%'
+      - '&7Go to the previous day with history.'
+    slot: 15
+  nextDay:
+    direct: nextDay
+    type: MATERIAL
+    value: PAPER
+    name: '&#55ff00Next day'
+    lore:
+      - '&fDate: %date%'
+      - '&7Go to the next day with history.'
+    slot: 24
+  prevChange:
+    direct: prevChange
+    type: MATERIAL
+    value: ARROW
+    name: '&#FFCC00Earlier change'
+    lore:
+      - '&fDate: %date%'
+      - '&7View the earlier state within this day.'
+    slot: 16
+  nextChange:
+    direct: nextChange
+    type: MATERIAL
+    value: ARROW
+    name: '&#FFCC00Later change'
+    lore:
+      - '&fDate: %date%'
+      - '&7View the later state within this day.'
+    slot: 17
+  prevPage:
+    direct: prevPage
+    type: MATERIAL
+    value: ARROW
+    name: '&#55ff00Previous inventory page'
+    lore:
+      - '&fPage %page%/%max_page%'
+    slot: 25
+  nextPage:
+    direct: nextPage
+    type: MATERIAL
+    value: ARROW
+    name: '&#55ff00Next inventory page'
+    lore:
+      - '&fPage %page%/%max_page%'
+    slot: 26
+  info:
+    type: MATERIAL
+    value: BOOK
+    name: '&fInventory history of &e%player%'
+    lore:
+      - '&fDate: &#55ff00%date%'
+      - '&fInventory page: &#55ff00%page%&f/&#55ff00%max_page%'
+      - '&fItems shown: &#55ff00%used_slots%'
+      - '&7Left: inventory page; right: equipment.'
+      - '&7Bottom row: hotbar.'
+      - '&7Use the arrows to browse changes within this day.'
+      - ''
+      - '%extract_status%'
+    slot: 7
+  restore:
+    direct: restore
+    type: MATERIAL
+    value: CHEST
+    name: '&#FFCC00Restore this state'
+    lore:
+      - '&fOverwrites current inventory page data.'
+      - '&fThe current state is saved first.'
+      - '&#fc3103Click to restore.'
+    slot: 34
+  disabled:
+    type: MATERIAL
+    value: GRAY_STAINED_GLASS_PANE
+    name: '&8Unavailable'
+  emptySlot:
+    type: MATERIAL
+    value: LIGHT_GRAY_STAINED_GLASS_PANE
+    name: '&7Empty equipment / hotbar slot'
+  emptyPage:
+    type: MATERIAL
+    value: LIGHT_GRAY_STAINED_GLASS_PANE
+    name: '&7Empty inventory page'
+    lore:
+      - '&fNo items on page %page% for this state.'
+    slot: 22
+  noHistory:
+    type: MATERIAL
+    value: RED_STAINED_GLASS_PANE
+    name: '&7Loading / no history available'
+    slot: 22

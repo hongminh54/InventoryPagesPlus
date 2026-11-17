@@ -31,12 +31,14 @@ database:
     h2:
       file-name: 'h2Database'
       table: 'inventorydata'
+      history-table: 'inventoryhistory'
     mysql:
       database:
         host: localhost
         port: 3306
         name: inventorypagesplus
         table: inventorydata
+        history-table: inventoryhistory
         user: root
         password: ''
 
@@ -112,6 +114,48 @@ protection:
   # Commands blocked while a player's pages are locked (root command names).
   # /baove and /pageprotect are always allowed so players can unlock. List aliases explicitly if needed.
   command-blacklist: []
+
+history:
+  enabled: true
+  # Leave empty for one server. On shared MySQL, give each server a unique ID.
+  # The viewer and maintenance only access records matching a non-empty server-id.
+  server-id: ''
+  # Numeric day/month/four-digit year with separators, for example dd-MM-yyyy or yyyy/MM/dd.
+  date-format: 'dd-MM-yyyy'
+  # Use one stable time zone on all servers sharing history storage.
+  time-zone: 'Asia/Ho_Chi_Minh'
+  snapshot:
+    # 0 disables periodic snapshots. Negative values are not allowed.
+    interval-seconds: 3600
+    # Keep at 1-2 to spread capture work across ticks.
+    players-per-tick: 1
+    on-join: true
+    on-quit: true
+    on-disable: true
+    before-clear: true
+  retention:
+    # Active history window in calendar months, clamped to 1-3.
+    months: 3
+    # ZIP: verify a local archive before deleting source records. DELETE: delete directly.
+    # Archives are offline backups under history-archives, not browsable in the GUI.
+    action: ZIP
+    # Archives are deleted when ALL contained records are this many months old.
+    # 0 keeps archives forever (disk usage then grows without an age limit).
+    archive-keep-months: 12
+    # Maintenance runs independently of recording, one bounded batch per interval.
+    batch-size: 50
+    interval-seconds: 60
+  performance:
+    # Queue changes require a restart. Overload fails safely rather than blocking ticks.
+    max-pending-tasks: 64
+    # Oversized records are rejected; existing oversized data is retained for recovery.
+    max-record-megabytes: 8
+  restore:
+    # Restoring overwrites current page data, so it is disabled by default.
+    enabled: false
+  extraction:
+    # Copying requires the restore permission declared in plugin.yml; history stays unchanged.
+    enabled: true
 
 # Permission based page limits.
 # Node format: inventorypagesplus.slotpage.<suffix>

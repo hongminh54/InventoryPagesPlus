@@ -66,6 +66,30 @@ public class PlayerInventoryDataStorage {
         PlayerInventoryDataStorage.STORAGE.saveData(data);
     }
 
+    public static boolean savePlayerInventoryDataChecked(PlayerInventoryDatabase data) {
+        PlayerInventoryStorage storage = STORAGE;
+        if (storage instanceof PlayerInventoryDataH2Storage)
+            return ((PlayerInventoryDataH2Storage) storage).saveDataChecked(data);
+        if (storage instanceof PlayerInventoryDataMySQLStorage)
+            return ((PlayerInventoryDataMySQLStorage) storage).saveDataChecked(data);
+        if (storage instanceof PlayerInventoryDataYAMLStorage)
+            return ((PlayerInventoryDataYAMLStorage) storage).saveDataChecked(data);
+        InventoryPagesPlus.plugin.getLogger().warning("Cannot save inventory: unsupported storage backend.");
+        return false;
+    }
+
+    public static PlayerInventoryDatabase loadOfflinePlayerInventory(String name, String uuid) {
+        PlayerInventoryStorage storage = STORAGE;
+        if (storage instanceof PlayerInventoryDataH2Storage)
+            return ((PlayerInventoryDataH2Storage) storage).fromH2(name, uuid, null);
+        if (storage instanceof PlayerInventoryDataMySQLStorage)
+            return ((PlayerInventoryDataMySQLStorage) storage).fromMySQL(name, uuid, null);
+        if (storage instanceof PlayerInventoryDataYAMLStorage)
+            return ((PlayerInventoryDataYAMLStorage) storage).loadOffline(name, uuid);
+        InventoryPagesPlus.plugin.getLogger().warning("Cannot load offline inventory: unsupported storage backend.");
+        return null;
+    }
+
     public static void disable() {
         PlayerInventoryDataStorage.STORAGE.disable();
     }

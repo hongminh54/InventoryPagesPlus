@@ -2,6 +2,7 @@ package me.cortezromeo.inventorypagesplus.command;
 
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.Settings;
+import me.cortezromeo.inventorypagesplus.file.inventory.HistoryInventoryFile;
 import me.cortezromeo.inventorypagesplus.file.inventory.InvseeInventoryFile;
 import me.cortezromeo.inventorypagesplus.file.inventory.InvseeOtherItemsInventoryFile;
 import me.cortezromeo.inventorypagesplus.file.inventory.PlayerInventoryFile;
@@ -52,6 +53,9 @@ public class InventoryPagesCommand implements CommandExecutor, TabExecutor {
                 English.reload();
                 Vietnamese.reload();
                 Messages.setupValue(Settings.LOCALE);
+                HistoryInventoryFile.reload();
+                if (InventoryPagesPlus.getHistoryManager() != null)
+                    InventoryPagesPlus.getHistoryManager().reload();
                 PlayerInventoryFile.reload();
                 InvseeInventoryFile.reload();
                 InvseeOtherItemsInventoryFile.reload();

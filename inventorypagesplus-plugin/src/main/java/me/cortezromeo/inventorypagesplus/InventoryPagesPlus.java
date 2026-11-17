@@ -4,6 +4,7 @@ import com.tchristofferson.configupdater.ConfigUpdater;
 import me.cortezromeo.inventorypagesplus.command.*;
 import me.cortezromeo.inventorypagesplus.enums.DatabaseType;
 import me.cortezromeo.inventorypagesplus.file.inventory.*;
+import me.cortezromeo.inventorypagesplus.history.InventoryHistoryManager;
 import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
 import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeCreative;
 import me.cortezromeo.inventorypagesplus.inventory.inventorysee.InventorySeeEnderChest;
@@ -37,6 +38,11 @@ public final class InventoryPagesPlus extends JavaPlugin {
     public static DatabaseType databaseType;
     private static boolean papiSupport = false;
     private static InventoryPagesPlusDataManager databaseManager;
+    private static InventoryHistoryManager historyManager;
+
+    public static InventoryHistoryManager getHistoryManager() {
+        return historyManager;
+    }
 
     public static InventoryPagesPlusDataManager getDatabaseManager() {
         return databaseManager;
@@ -97,6 +103,9 @@ public final class InventoryPagesPlus extends JavaPlugin {
                 e.printStackTrace();
             }
         }
+
+        historyManager = new InventoryHistoryManager();
+        historyManager.init();
 
         if (Metrics.isEnabled())
             new Metrics(this, 21649);
@@ -206,6 +215,16 @@ public final class InventoryPagesPlus extends JavaPlugin {
         }
         InvseeEnderChestInventoryFile.reload();
         DebugManager.debug("LOADING FILE", "Loaded invseeenderchestinventory.yml.");
+
+        HistoryInventoryFile.setup();
+        HistoryInventoryFile.saveDefault();
+        File historyInventoryFile = new File(getDataFolder(), "inventories/historyinventory.yml");
+        try {
+            ConfigUpdater.update(this, "historyinventory.yml", historyInventoryFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        HistoryInventoryFile.reload();
     }
 
     public void initLanguages() {
@@ -253,6 +272,7 @@ public final class InventoryPagesPlus extends JavaPlugin {
         new ClearAllCommand();
         new InvseeCommand();
         new ProtectionCommand();
+        new HistoryCommand();
     }
 
     public void initListeners() {
@@ -279,6 +299,8 @@ public final class InventoryPagesPlus extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (historyManager != null)
+            historyManager.shutdown();
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             String playerUUID = player.getUniqueId().toString();
             if (getDatabaseManager().getPlayerInventoryDatabase().containsKey(playerUUID)) {

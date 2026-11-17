@@ -3,22 +3,26 @@ package me.cortezromeo.inventorypagesplus.storage;
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
-import me.cortezromeo.inventorypagesplus.manager.DebugManager;
 import me.cortezromeo.inventorypagesplus.util.FileUtil;
 import me.cortezromeo.inventorypagesplus.util.StringUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
 
@@ -32,13 +36,21 @@ public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
             try {
                 file.createNewFile();
             } catch (IOException e) {
-                e.printStackTrace();
+                InventoryPagesPlus.plugin.getLogger().log(Level.WARNING, "Unable to create YAML inventory file.", e);
             }
         }
         return file;
     }
 
+    public PlayerInventoryDatabase loadOffline(String playerName, String playerUUID) {
+        return fromFile(getFile(playerName, playerUUID), playerName, playerUUID, null);
+    }
+
     public PlayerInventoryDatabase fromFile(File file, String playerName, String playerUUID) {
+        return fromFile(file, playerName, playerUUID, Bukkit.getPlayer(playerName));
+    }
+
+    public PlayerInventoryDatabase fromFile(File file, String playerName, String playerUUID, Player player) {
         YamlConfiguration storage = YamlConfiguration.loadConfiguration(file);
 
         HashMap<Integer, ArrayList<ItemStack>> pageItemHashMap = new HashMap<>();
@@ -46,7 +58,7 @@ public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
         if (maxPageDefault < 0)
             maxPageDefault = 0;
 
-        PlayerInventoryDatabase data = new PlayerInventory(Bukkit.getPlayer(playerName), playerName, playerUUID, maxPageDefault, null, null, PlayerPageInventory.prevItem, PlayerPageInventory.prevPos, PlayerPageInventory.nextItem, PlayerPageInventory.nextPos, PlayerPageInventory.noPageItem);
+        PlayerInventoryDatabase data = new PlayerInventory(player, playerName, playerUUID, maxPageDefault, null, null, PlayerPageInventory.prevItem, PlayerPageInventory.prevPos, PlayerPageInventory.nextItem, PlayerPageInventory.nextPos, PlayerPageInventory.noPageItem);
 
         if (storage.getString("name") == null) {
             return data;
@@ -171,49 +183,87 @@ public class PlayerInventoryDataYAMLStorage implements PlayerInventoryStorage {
 
     @Override
     public void saveData(PlayerInventoryDatabase data) {
-        File playerFile = getFile(data.getPlayerName(), data.getPlayerUUID());
-        FileConfiguration playerDataCfg = YamlConfiguration.loadConfiguration(playerFile);
-        PlayerInventoryDatabase playerInventoryData = InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(UUID.fromString(data.getPlayerUUID()));
+        saveDataChecked(data);
+    }
 
-        playerDataCfg.set("name", playerInventoryData.getPlayerName());
-        playerDataCfg.set("uuid", playerInventoryData.getPlayerUUID());
-        playerDataCfg.set("maxPage", playerInventoryData.getMaxPage());
-        playerDataCfg.set("currentPage", playerInventoryData.getCurrentPage());
-        playerDataCfg.set("prevItemPos", playerInventoryData.getPrevItemPos());
-        playerDataCfg.set("nextItemPos", playerInventoryData.getNextItemPos());
-
-        playerDataCfg.set("protection.pin", playerInventoryData.getProtectionPinHash());
-        playerDataCfg.set("protection.attempts", playerInventoryData.getProtectionAttempts());
-        playerDataCfg.set("protection.ban-until", playerInventoryData.getProtectionBanUntil());
-
-        // save survival items
-        for (Map.Entry<Integer, ArrayList<ItemStack>> pageItemEntry : playerInventoryData.getItems().entrySet()) {
-            for (int slotNumber = 0; slotNumber < pageItemEntry.getValue().size(); slotNumber++) {
-                int pageNumber = pageItemEntry.getKey();
-                if (pageItemEntry.getValue().get(slotNumber) != null) {
-                    playerDataCfg.set("items.main." + pageNumber + "." + slotNumber, StringUtil.toBase64(InventoryPagesPlus.nms.getItemStack(pageItemEntry.getValue().get(slotNumber))));
-                } else {
-                    playerDataCfg.set("items.main." + pageNumber + "." + slotNumber, null);
-                }
-            }
-        }
-
-        // save creative items
-        if (InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(UUID.fromString(data.getPlayerUUID())).hasUsedCreative()) {
-            for (int slotNumber = 0; slotNumber < 27; slotNumber++) {
-                if (InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(UUID.fromString(data.getPlayerUUID())).getCreativeItems().get(slotNumber) != null) {
-                    playerDataCfg.set("items.creative.0." + slotNumber, StringUtil.toBase64(InventoryPagesPlus.nms.getItemStack(playerInventoryData.getCreativeItems().get(slotNumber))));
-                } else {
-                    playerDataCfg.set("items.creative.0." + slotNumber, null);
-                }
-            }
-        }
-
+    public boolean saveDataChecked(PlayerInventoryDatabase data) {
+        Path temporaryFile = null;
         try {
-            playerDataCfg.save(playerFile);
-            DebugManager.debug("SAVING INV. FROM HASHMAP TO FILE PLAYER (" + data.getPlayerName() + ")", "Completed with no issues.");
-        } catch (IOException e) {
-            e.printStackTrace();
+            File playerFile = new File(InventoryPagesPlus.plugin.getDataFolder(),
+                    "database/" + data.getPlayerName().length() + "/" + data.getPlayerUUID() + ".yml");
+            YamlConfiguration playerDataCfg = new YamlConfiguration();
+            if (playerFile.exists())
+                playerDataCfg.load(playerFile);
+
+            playerDataCfg.set("name", data.getPlayerName());
+            playerDataCfg.set("uuid", data.getPlayerUUID());
+            playerDataCfg.set("maxPage", data.getMaxPage());
+            playerDataCfg.set("currentPage", data.getCurrentPage());
+            playerDataCfg.set("prevItemPos", data.getPrevItemPos());
+            playerDataCfg.set("nextItemPos", data.getNextItemPos());
+
+            playerDataCfg.set("protection.pin", data.getProtectionPinHash());
+            playerDataCfg.set("protection.attempts", data.getProtectionAttempts());
+            playerDataCfg.set("protection.ban-until", data.getProtectionBanUntil());
+
+            // Removed page keys must not survive a replacement of the in-memory pages.
+            playerDataCfg.set("items.main", null);
+            if (data.hasUsedCreative()
+                    || data.getCreativeItems().stream().allMatch(item -> item == null))
+                playerDataCfg.set("items.creative", null);
+            for (Map.Entry<Integer, ArrayList<ItemStack>> pageItemEntry : data.getItems().entrySet()) {
+                for (int slotNumber = 0; slotNumber < pageItemEntry.getValue().size(); slotNumber++) {
+                    int pageNumber = pageItemEntry.getKey();
+                    if (pageItemEntry.getValue().get(slotNumber) != null) {
+                        playerDataCfg.set("items.main." + pageNumber + "." + slotNumber, encodeItemChecked(pageItemEntry.getValue().get(slotNumber)));
+                    } else {
+                        playerDataCfg.set("items.main." + pageNumber + "." + slotNumber, null);
+                    }
+                }
+            }
+
+            // save creative items
+            if (data.hasUsedCreative()) {
+                for (int slotNumber = 0; slotNumber < 27; slotNumber++) {
+                    if (data.getCreativeItems().get(slotNumber) != null) {
+                        playerDataCfg.set("items.creative.0." + slotNumber, encodeItemChecked(data.getCreativeItems().get(slotNumber)));
+                    } else {
+                        playerDataCfg.set("items.creative.0." + slotNumber, null);
+                    }
+                }
+            }
+
+            Path target = playerFile.toPath();
+            Files.createDirectories(target.getParent());
+            temporaryFile = Files.createTempFile(target.getParent(), playerFile.getName(), ".tmp");
+            playerDataCfg.save(temporaryFile.toFile());
+            try {
+                Files.move(temporaryFile, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporaryFile, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+            if (Settings.DEBUG_ENABLED)
+                InventoryPagesPlus.plugin.getLogger().info("SAVING INV. FROM HASHMAP TO FILE PLAYER (" + data.getPlayerName() + "): Completed with no issues.");
+            return true;
+        } catch (Exception e) {
+            InventoryPagesPlus.plugin.getLogger().log(Level.WARNING, "Unable to save YAML inventory.", e);
+            return false;
+        } finally {
+            if (temporaryFile != null) {
+                try {
+                    Files.deleteIfExists(temporaryFile);
+                } catch (IOException e) {
+                    InventoryPagesPlus.plugin.getLogger().log(Level.WARNING, "Unable to clean up temporary inventory file.", e);
+                }
+            }
         }
+    }
+
+    private String encodeItemChecked(ItemStack itemStack) {
+        itemStack = InventoryPagesPlus.nms.getItemStack(itemStack);
+        String encoded = StringUtil.toBase64(itemStack);
+        if (itemStack != null && encoded == null)
+            throw new IllegalStateException("Unable to encode a non-null inventory item.");
+        return encoded;
     }
 }
