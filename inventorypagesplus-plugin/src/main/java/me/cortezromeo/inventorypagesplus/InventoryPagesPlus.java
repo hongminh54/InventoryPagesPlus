@@ -14,6 +14,7 @@ import me.cortezromeo.inventorypagesplus.language.English;
 import me.cortezromeo.inventorypagesplus.language.Messages;
 import me.cortezromeo.inventorypagesplus.language.Vietnamese;
 import me.cortezromeo.inventorypagesplus.listener.*;
+import me.cortezromeo.inventorypagesplus.manager.AutoFixManager;
 import me.cortezromeo.inventorypagesplus.manager.AutoSaveManager;
 import me.cortezromeo.inventorypagesplus.manager.DatabaseManager;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
@@ -64,6 +65,8 @@ public final class InventoryPagesPlus extends JavaPlugin {
         initFiles();
         Settings.setupValue();
         initLanguages();
+        AutoFixDataFile.setup();
+        AutoFixManager.reloadRules();
         initDatabase();
         initInventories();
         initCommands();
@@ -225,6 +228,42 @@ public final class InventoryPagesPlus extends JavaPlugin {
             e.printStackTrace();
         }
         HistoryInventoryFile.reload();
+
+        // inventories/autofixinventory.yml
+        AutoFixInventoryFile.setup();
+        AutoFixInventoryFile.saveDefault();
+        File autoFixInventoryFile = new File(getDataFolder() + "/inventories/autofixinventory.yml");
+        try {
+            ConfigUpdater.update(this, "autofixinventory.yml", autoFixInventoryFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        AutoFixInventoryFile.reload();
+        DebugManager.debug("LOADING FILE", "Loaded autofixinventory.yml.");
+
+        // inventories/autofixaddinventory.yml
+        AutoFixAddInventoryFile.setup();
+        AutoFixAddInventoryFile.saveDefault();
+        File autoFixAddInventoryFile = new File(getDataFolder() + "/inventories/autofixaddinventory.yml");
+        try {
+            ConfigUpdater.update(this, "autofixaddinventory.yml", autoFixAddInventoryFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        AutoFixAddInventoryFile.reload();
+        DebugManager.debug("LOADING FILE", "Loaded autofixaddinventory.yml.");
+
+        // inventories/autofixeditinventory.yml
+        AutoFixEditInventoryFile.setup();
+        AutoFixEditInventoryFile.saveDefault();
+        File autoFixEditInventoryFile = new File(getDataFolder() + "/inventories/autofixeditinventory.yml");
+        try {
+            ConfigUpdater.update(this, "autofixeditinventory.yml", autoFixEditInventoryFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        AutoFixEditInventoryFile.reload();
+        DebugManager.debug("LOADING FILE", "Loaded autofixeditinventory.yml.");
     }
 
     public void initLanguages() {
@@ -286,6 +325,7 @@ public final class InventoryPagesPlus extends JavaPlugin {
         new EntityPickupListener();
         new InventoryOpenListener();
         new ProtectionListener();
+        new AutoFixListener();
         //Bukkit.getPluginManager().registerEvents(new InvseeOtherItemsInventory(), InventoryPagesPlus.plugin);
     }
 

@@ -15,6 +15,7 @@ commands:
       - inventorypage
       - inventorypages+
       - inventoryp
+      - ipp
   clear:
     description: Clear current page
     aliases:
@@ -40,6 +41,9 @@ commands:
     aliases:
       - pageprotect
 permissions:
+  inventorypagesplus.autofix.bypass:
+    description: Never have your items changed by AutoFix
+    default: op
   inventorypagesplus.history:
     description: Allows viewing inventory page history
     default: op

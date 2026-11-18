@@ -77,6 +77,10 @@ public class Settings {
     public static boolean HISTORY_EXTRACTION_ENABLED;
     public static String DATABASE_SETTINGS_H2_HISTORY_TABLE;
     public static String DATABASE_SETTINGS_MYSQL_HISTORY_TABLE;
+    public static boolean AUTOFIX_ENABLED;
+    public static boolean AUTOFIX_TOGGLE_ENCHANT;
+    public static String AUTOFIX_DATA_FILE;
+    public static int AUTOFIX_PLAYERS_PER_TICK;
 
     public static void setupValue() {
         DebugManager.debug("SETTINGS", "Loading settings from config yaml...");
@@ -171,6 +175,10 @@ public class Settings {
         HISTORY_EXTRACTION_ENABLED = configuration.getBoolean("history.extraction.enabled", true);
         DATABASE_SETTINGS_H2_HISTORY_TABLE = configuration.getString("database.settings.h2.history-table", "inventoryhistory");
         DATABASE_SETTINGS_MYSQL_HISTORY_TABLE = configuration.getString("database.settings.mysql.database.history-table", "inventoryhistory");
+        AUTOFIX_ENABLED = configuration.getBoolean("autofix.enabled", true);
+        AUTOFIX_TOGGLE_ENCHANT = configuration.getBoolean("autofix.toggle-enchant", true);
+        AUTOFIX_DATA_FILE = configuration.getString("autofix.data-file", "autofix-data.yml");
+        AUTOFIX_PLAYERS_PER_TICK = Math.max(1, configuration.getInt("autofix.players-per-tick", 1));
         DebugManager.debug("SETTINGS", "Loaded settings from config yaml.");
     }
 

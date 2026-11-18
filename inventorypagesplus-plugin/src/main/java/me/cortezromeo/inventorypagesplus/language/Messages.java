@@ -95,6 +95,29 @@ public class Messages {
     public static String COMMAND_HISTORY_INVALID_DATE;
     public static String COMMAND_HISTORY_NO_MORE;
 
+    public static String COMMAND_AUTOFIX_COMPLETED;
+    public static String COMMAND_AUTOFIX_DISABLED;
+    public static String COMMAND_AUTOFIX_RELOADED;
+    public static String COMMAND_AUTOFIX_TOGGLED_ON;
+    public static String COMMAND_AUTOFIX_TOGGLED_OFF;
+    public static String COMMAND_AUTOFIX_FORCE_DONE;
+    public static String COMMAND_AUTOFIX_FORCE_ALL_STARTED;
+    public static String COMMAND_AUTOFIX_FORCE_ALL_COMPLETE;
+    public static String COMMAND_AUTOFIX_FORCE_ALL_RUNNING;
+    public static String COMMAND_AUTOFIX_FORCE_ALL_EMPTY;
+    public static String COMMAND_AUTOFIX_RULE_ADDED;
+    public static String COMMAND_AUTOFIX_RULE_DELETED;
+    public static String COMMAND_AUTOFIX_RULE_INVALID_OLD;
+    public static String COMMAND_AUTOFIX_RULE_INVALID_NEW;
+    public static String COMMAND_AUTOFIX_RULES_ADDED;
+    public static String COMMAND_AUTOFIX_RULE_INVALID_OLD_PAIR;
+    public static String COMMAND_AUTOFIX_RULE_INVALID_NEW_PAIR;
+    public static String COMMAND_AUTOFIX_ITEM_UPDATED;
+    public static String COMMAND_AUTOFIX_BYPASS_ON;
+    public static String COMMAND_AUTOFIX_BYPASS_OFF;
+    public static String COMMAND_AUTOFIX_BYPASS_ON_OTHER;
+    public static String COMMAND_AUTOFIX_BYPASS_OFF_OTHER;
+
     public static void setupValue(String locale) {
         locale = locale.toLowerCase();
         File messageFile = new File(InventoryPagesPlus.plugin.getDataFolder() + "/languages/messages_" + locale + ".yml");
@@ -193,6 +216,29 @@ public class Messages {
         COMMAND_HISTORY_INVALID_PAGE = fileConfiguration.getString("messages.commands.history.invalid-page");
         COMMAND_HISTORY_INVALID_DATE = fileConfiguration.getString("messages.commands.history.invalid-date");
         COMMAND_HISTORY_NO_MORE = fileConfiguration.getString("messages.commands.history.no-more");
+
+        COMMAND_AUTOFIX_COMPLETED = fileConfiguration.getString("messages.commands.autofix.completed");
+        COMMAND_AUTOFIX_DISABLED = fileConfiguration.getString("messages.commands.autofix.disabled");
+        COMMAND_AUTOFIX_RELOADED = fileConfiguration.getString("messages.commands.autofix.reloaded");
+        COMMAND_AUTOFIX_TOGGLED_ON = fileConfiguration.getString("messages.commands.autofix.toggled-on");
+        COMMAND_AUTOFIX_TOGGLED_OFF = fileConfiguration.getString("messages.commands.autofix.toggled-off");
+        COMMAND_AUTOFIX_FORCE_DONE = fileConfiguration.getString("messages.commands.autofix.force-done");
+        COMMAND_AUTOFIX_FORCE_ALL_STARTED = fileConfiguration.getString("messages.commands.autofix.force-all-started");
+        COMMAND_AUTOFIX_FORCE_ALL_COMPLETE = fileConfiguration.getString("messages.commands.autofix.force-all-complete");
+        COMMAND_AUTOFIX_FORCE_ALL_RUNNING = fileConfiguration.getString("messages.commands.autofix.force-all-running");
+        COMMAND_AUTOFIX_FORCE_ALL_EMPTY = fileConfiguration.getString("messages.commands.autofix.force-all-empty");
+        COMMAND_AUTOFIX_RULE_ADDED = fileConfiguration.getString("messages.commands.autofix.rule-added");
+        COMMAND_AUTOFIX_RULE_DELETED = fileConfiguration.getString("messages.commands.autofix.rule-deleted");
+        COMMAND_AUTOFIX_RULE_INVALID_OLD = fileConfiguration.getString("messages.commands.autofix.rule-invalid-old");
+        COMMAND_AUTOFIX_RULE_INVALID_NEW = fileConfiguration.getString("messages.commands.autofix.rule-invalid-new");
+        COMMAND_AUTOFIX_RULES_ADDED = fileConfiguration.getString("messages.commands.autofix.rules-added");
+        COMMAND_AUTOFIX_RULE_INVALID_OLD_PAIR = fileConfiguration.getString("messages.commands.autofix.rule-invalid-old-pair");
+        COMMAND_AUTOFIX_RULE_INVALID_NEW_PAIR = fileConfiguration.getString("messages.commands.autofix.rule-invalid-new-pair");
+        COMMAND_AUTOFIX_ITEM_UPDATED = fileConfiguration.getString("messages.commands.autofix.item-updated");
+        COMMAND_AUTOFIX_BYPASS_ON = fileConfiguration.getString("messages.commands.autofix.bypass-on");
+        COMMAND_AUTOFIX_BYPASS_OFF = fileConfiguration.getString("messages.commands.autofix.bypass-off");
+        COMMAND_AUTOFIX_BYPASS_ON_OTHER = fileConfiguration.getString("messages.commands.autofix.bypass-on-other");
+        COMMAND_AUTOFIX_BYPASS_OFF_OTHER = fileConfiguration.getString("messages.commands.autofix.bypass-off-other");
 
         DebugManager.debug("LOADING MESSAGES", "Loaded message file name: " + locale + ".");
     }

@@ -1,0 +1,76 @@
+#
+#  _                                                      _
+# (_)_ ____   __    _ __   __ _  __ _  ___  ___     _ __ | |_   _ ___
+# | | '_ \ \ / /   | '_ \ / _` |/ _` |/ _ \/ __|   | '_ \| | | | / __|
+# | | | | \ V /    | |_) | (_| | (_| |  __/\__ \   | |_) | | |_| \__ \
+# |_|_| |_|\_(_)   | .__/ \__,_|\__, |\___||___/   | .__/|_|\__,_|___/
+#                  |_|          |___/              |_|
+# A plugin made by Cortez_Romeo
+#
+# Contact me:
+# discord account: Cortez_Romeo
+# discord server: https://discord.gg/NWbTVddmBM
+#
+# Please join my discord server to report bugs, giving suggestions. Thank you for supporting plugin!
+#
+#  Some useful information:
+#  * Support hex color: &#RRGGBB, #RRGGBB, <#RRGGBB>, {#RRGGBB}
+#  * There are 3 main types:
+#    + material:
+#      > For spigot version below 1.13, you must put number for the sections 'value:' and 'data: '
+#          For example: (value: 95 | data: 1) [https://minecraft-ids.grahamedgecombe.com/]
+#      > For spigot version 1.13 or above, you must put the MATERIAL name for section 'value:' (Section 'data:' will not be used)
+#          For example: (value: BOOK) [https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html]
+#    + playerhead: Get the player's head
+#    + customhead:
+#      + How to use custom head:
+#          Step 1: Get into the website https://minecraft-heads.com/custom-heads/ and get whatever head you want
+#          Step 2: Scroll down to the 'For Developers:' part, copy the 'Value' section and then paste it into 'value:'
+#  * customModelData: If you are using server texture pack to make custom item display, this option is for you. Set to '0' if you don't use it.
+
+# List of all fix rules, opened with /inventorypagesplus autofix.
+# Click a rule to edit it, use the add button to create new rules.
+# Placeholders: %page% = current page number (1 based).
+title: '&#00ff8cFix Item List &7- &fPage %page%'
+size: 54
+
+prev-page-slot: 45
+next-page-slot: 53
+# Button opening the add-fix GUI.
+add-slot: 49
+# Slots listing the rules, one rule per slot, paginated.
+rule-slots: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44]
+
+# Extra lore appended to every rule item. Placeholders: %key%, %newItem%.
+rule-lore:
+  - ''
+  - '&7Key: &f%key%'
+  - '&7Replace with: &f%newItem%'
+  - ''
+  - '&#FFCC00Click to edit this rule.'
+
+items:
+  add:
+    type: material
+    value: LIME_STAINED_GLASS_PANE
+    data: 0
+    customModelData: 0
+    name: '&#55ff00Add Fix [+]'
+    lore:
+      - '&7Open the GUI to add new fix rules.'
+  prevPage:
+    type: material
+    value: ARROW
+    data: 0
+    customModelData: 0
+    name: '&#55ff00Previous page'
+    lore:
+      - '&7Show the previous rules.'
+  nextPage:
+    type: material
+    value: ARROW
+    data: 0
+    customModelData: 0
+    name: '&#55ff00Next page'
+    lore:
+      - '&7Show the next rules.'

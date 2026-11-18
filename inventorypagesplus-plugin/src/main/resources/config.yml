@@ -199,6 +199,20 @@ advanced-pick-up-settings:
     volume: 1
     pitch: 1
 
+# Automatically replace old items with new ones defined by admin rules.
+# Rules are managed with /inventorypagesplus autofix (GUI) and stored in the data file below.
+# The GUI layout is customized in inventories/autofixinventory.yml.
+# When a rule is added, edited or removed, every player is scanned again on their next join.
+autofix:
+  enabled: true
+  # Copy the enchantments of the old item onto the new one when fixing.
+  toggle-enchant: true
+  # File (inside the plugin data folder) storing rules and the list of already fixed players.
+  data-file: 'autofix-data.yml'
+  # How many online players are processed per tick when using "autofix force" without a target.
+  # Keep this low so force-fixing everyone never hurts the TPS.
+  players-per-tick: 1
+
 # Using for collecting the number of players in the server.
 # This option does not affect the server performance.
 bStats:

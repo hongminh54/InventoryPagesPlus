@@ -1,0 +1,54 @@
+# Edit-fix GUI, opened by clicking a rule in the fix list.
+# Support hex color: &#RRGGBB, #RRGGBB, <#RRGGBB>, {#RRGGBB}
+# Item types: material / playerhead / customhead (see playerinventory.yml for details).
+#
+# Shows the old item, the replacement item and a live preview of the fixed result.
+# Confirm saves the rule and returns to the list; closing without confirming keeps the rule unchanged.
+title: '&#00ff8cItem Fix'
+size: 27
+
+old-slot: 10
+new-slot: 16
+# Read-only preview of the item after fixing.
+preview-slot: 13
+confirm-slot: 25
+delete-slot: 26
+decor-slots: [3, 4, 5, 12, 14, 21, 22, 23]
+separator-slots: [0, 1, 2, 6, 7, 8, 9, 11, 15, 17, 18, 19, 20, 24]
+
+# Extra lore appended to the preview item.
+preview-lore:
+  - ''
+  - '&#FFCC00Preview of the fixed item.'
+
+items:
+  confirm:
+    type: material
+    value: DIAMOND
+    data: 0
+    customModelData: 0
+    name: '&#55ff00Confirm and go back'
+    lore:
+      - '&7Save the rule and return to the list.'
+  delete:
+    type: material
+    value: REDSTONE
+    data: 0
+    customModelData: 0
+    name: '&#fc3103Delete rule'
+    lore:
+      - '&7Delete this rule and return to the list.'
+  decor:
+    type: material
+    value: BLUE_STAINED_GLASS_PANE
+    data: 0
+    customModelData: 0
+    name: ' '
+    lore: []
+  separator:
+    type: material
+    value: RED_STAINED_GLASS_PANE
+    data: 0
+    customModelData: 0
+    name: ' '
+    lore: []
