@@ -36,10 +36,10 @@ commands:
     description: View inventory page history of a player
     aliases:
       - pagehistory
-  baove:
+  pageprotect:
     description: Protect your inventory pages with a PIN
     aliases:
-      - pageprotect
+      - baove
 permissions:
   inventorypagesplus.autofix.bypass:
     description: Never have your items changed by AutoFix
@@ -55,4 +55,13 @@ permissions:
     default: op
   inventorypagesplus.history.restore:
     description: Allows restoring a snapshot
+    default: op
+  inventorypagesplus.invsee.admin:
+    description: Allows taking and giving items through the invsee GUI
+    default: op
+  inventorypagesplus.invsee.take:
+    description: Allows taking items from other players' inventories through the invsee GUI
+    default: op
+  inventorypagesplus.invsee.give:
+    description: Allows putting items into other players' inventories through the invsee GUI
     default: op

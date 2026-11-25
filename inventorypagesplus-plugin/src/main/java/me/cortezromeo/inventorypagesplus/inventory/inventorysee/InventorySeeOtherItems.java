@@ -130,6 +130,8 @@ public class InventorySeeOtherItems extends InventorySee {
         if (event.getClickedInventory() == null)
             return;
         if (event.getClickedInventory().getType() == InventoryType.PLAYER) {
+            if (handleIntervention(event, (Player) event.getWhoClicked()))
+                return;
             PlayerPageInventory.handleEvent(event);
             return;
         }
@@ -137,6 +139,47 @@ public class InventorySeeOtherItems extends InventorySee {
         // cancel click event
         event.setCancelled(true);
         super.handleMenu(event);
+    }
+
+    @Override
+    protected boolean isEditableSlot(Player target, int viewSlot) {
+        return viewSlot == helmetItemSlot || viewSlot == chestItemSlot || viewSlot == legsItemSlot
+                || viewSlot == bootsItemSlot || viewSlot == mainHandItemSlot || viewSlot == secondHandItemSlot;
+    }
+
+    @Override
+    protected ItemStack getTargetSlotItem(Player target, int viewSlot) {
+        PlayerInventory targetInventory = target.getInventory();
+        if (viewSlot == helmetItemSlot)
+            return targetInventory.getHelmet();
+        if (viewSlot == chestItemSlot)
+            return targetInventory.getChestplate();
+        if (viewSlot == legsItemSlot)
+            return targetInventory.getLeggings();
+        if (viewSlot == bootsItemSlot)
+            return targetInventory.getBoots();
+        if (viewSlot == mainHandItemSlot)
+            return targetInventory.getItemInMainHand();
+        if (viewSlot == secondHandItemSlot)
+            return targetInventory.getItemInOffHand();
+        return null;
+    }
+
+    @Override
+    protected void setTargetSlotItem(Player target, int viewSlot, ItemStack item) {
+        PlayerInventory targetInventory = target.getInventory();
+        if (viewSlot == helmetItemSlot)
+            targetInventory.setHelmet(item);
+        else if (viewSlot == chestItemSlot)
+            targetInventory.setChestplate(item);
+        else if (viewSlot == legsItemSlot)
+            targetInventory.setLeggings(item);
+        else if (viewSlot == bootsItemSlot)
+            targetInventory.setBoots(item);
+        else if (viewSlot == mainHandItemSlot)
+            targetInventory.setItemInMainHand(item);
+        else if (viewSlot == secondHandItemSlot)
+            targetInventory.setItemInOffHand(item);
     }
 
     @Override

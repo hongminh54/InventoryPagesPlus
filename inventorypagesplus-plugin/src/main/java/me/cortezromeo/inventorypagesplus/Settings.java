@@ -16,6 +16,9 @@ public class Settings {
     public static final String HISTORY_PERMISSION_OTHERS = "inventorypagesplus.history.others";
     public static final String HISTORY_PERMISSION_SAVE = "inventorypagesplus.history.save";
     public static final String HISTORY_PERMISSION_RESTORE = "inventorypagesplus.history.restore";
+    public static final String INVSEE_PERMISSION_ADMIN = "inventorypagesplus.invsee.admin";
+    public static final String INVSEE_PERMISSION_TAKE = "inventorypagesplus.invsee.take";
+    public static final String INVSEE_PERMISSION_GIVE = "inventorypagesplus.invsee.give";
     public static String DATABASE_TYPE;
     public static String DATABASE_SETTINGS_H2_FILE_NAME;
     public static String DATABASE_SETTINGS_H2_TABLE;

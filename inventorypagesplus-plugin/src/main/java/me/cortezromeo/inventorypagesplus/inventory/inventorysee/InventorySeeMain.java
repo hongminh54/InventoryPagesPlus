@@ -1,17 +1,21 @@
 package me.cortezromeo.inventorypagesplus.inventory.inventorysee;
 
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
+import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.file.inventory.InvseeInventoryFile;
 import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
 import me.cortezromeo.inventorypagesplus.manager.PageLimitManager;
+import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 import me.cortezromeo.inventorypagesplus.util.ItemUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -142,6 +146,8 @@ public class InventorySeeMain extends InventorySee {
         if (event.getClickedInventory() == null)
             return;
         if (event.getClickedInventory().getType() == InventoryType.PLAYER) {
+            if (handleIntervention(event, (Player) event.getWhoClicked()))
+                return;
             PlayerPageInventory.handleEvent(event);
             return;
         }
@@ -163,6 +169,52 @@ public class InventorySeeMain extends InventorySee {
         }
 
         super.handleMenu(event);
+    }
+
+    @Override
+    protected Inventory interventionStorage(Player target) {
+        return target.getInventory();
+    }
+
+    @Override
+    protected boolean isEditableSlot(Player target, int viewSlot) {
+        if (viewSlot >= 27 && viewSlot < 36)
+            return true;
+        if (viewSlot < 0 || viewSlot > 26)
+            return false;
+        // The page rows go stale while a creative target's items live in the creative list,
+        // so only the hotbar row stays editable for them.
+        if (Settings.INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY && target.getGameMode() == GameMode.CREATIVE)
+            return false;
+        PlayerInventoryDatabase database = getTargetInventoryDatabase();
+        return viewSlot != database.getPrevItemPos() && viewSlot != database.getNextItemPos();
+    }
+
+    @Override
+    protected ItemStack getTargetSlotItem(Player target, int viewSlot) {
+        if (viewSlot >= 27)
+            return target.getInventory().getItem(viewSlot - 27);
+        if (getPage() == getTargetInventoryDatabase().getCurrentPage())
+            return target.getInventory().getItem(viewSlot + 9);
+        return getTargetInventoryDatabase().getItems(getPage()).get(pageIndex(viewSlot));
+    }
+
+    @Override
+    protected void setTargetSlotItem(Player target, int viewSlot, ItemStack item) {
+        if (viewSlot >= 27) {
+            target.getInventory().setItem(viewSlot - 27, item);
+        } else if (getPage() == getTargetInventoryDatabase().getCurrentPage()) {
+            // saveCurrentPage mirrors the live inventory into the database every second.
+            target.getInventory().setItem(viewSlot + 9, item);
+        } else {
+            getTargetInventoryDatabase().getItems(getPage()).set(pageIndex(viewSlot), item);
+        }
+    }
+
+    // Page lists drop the two navigation buttons, so every GUI slot after them shifts left.
+    private int pageIndex(int viewSlot) {
+        PlayerInventoryDatabase database = getTargetInventoryDatabase();
+        return viewSlot - (viewSlot > database.getPrevItemPos() ? 1 : 0) - (viewSlot > database.getNextItemPos() ? 1 : 0);
     }
 
     @Override

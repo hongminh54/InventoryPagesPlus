@@ -107,6 +107,8 @@ public class InventorySeeCreative extends InventorySee {
         if (event.getClickedInventory() == null)
             return;
         if (event.getClickedInventory().getType() == InventoryType.PLAYER) {
+            if (handleIntervention(event, (Player) event.getWhoClicked()))
+                return;
             PlayerPageInventory.handleEvent(event);
             return;
         }

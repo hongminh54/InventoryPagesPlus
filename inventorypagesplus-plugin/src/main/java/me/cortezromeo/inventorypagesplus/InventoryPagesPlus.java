@@ -22,6 +22,7 @@ import me.cortezromeo.inventorypagesplus.manager.InventoryPagesPlusDataManager;
 import me.cortezromeo.inventorypagesplus.server.VersionSupport;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDataStorage;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
+import me.cortezromeo.inventorypagesplus.support.DialogSupport;
 import me.cortezromeo.inventorypagesplus.support.PAPISupport;
 import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import me.cortezromeo.support.version.cross.CrossVersionSupport;
@@ -94,6 +95,7 @@ public final class InventoryPagesPlus extends JavaPlugin {
         MessageUtil.log("");
         MessageUtil.log("&fSupport:");
         MessageUtil.log((papiSupport ? "&2[YES] &aPlaceholderAPI" : "&4[NO] &cPlaceholderAPI"));
+        MessageUtil.log((DialogSupport.isAvailable() ? "&2[YES] &aDialog API" : "&7[NO] &7Dialog API &8(using command help)"));
         MessageUtil.log("");
         MessageUtil.log("&ePlugin is enabled successfully.");
         MessageUtil.log("");

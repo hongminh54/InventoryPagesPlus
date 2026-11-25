@@ -112,7 +112,7 @@ protection:
   # Temporary ban duration in seconds. Set to 0 to disable the ban.
   ban-seconds: 300
   # Commands blocked while a player's pages are locked (root command names).
-  # /baove and /pageprotect are always allowed so players can unlock. List aliases explicitly if needed.
+  # /pageprotect are always allowed so players can unlock. List aliases explicitly if needed.
   command-blacklist: []
 
 history:

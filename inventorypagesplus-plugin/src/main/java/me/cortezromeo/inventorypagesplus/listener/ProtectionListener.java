@@ -8,6 +8,7 @@ import me.cortezromeo.inventorypagesplus.manager.ProtectionManager;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -19,6 +20,10 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.*;
 
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+
 /**
  * Freezes a locked player's interactions and blocks blacklisted commands.
  * Runs at LOWEST so the existing HIGHEST listeners (pickup/click) skip via ignoreCancelled.
@@ -26,7 +31,17 @@ import org.bukkit.event.player.*;
  */
 public class ProtectionListener implements Listener {
 
+    // The unlock command must always pass, otherwise a locked player could never unlock.
+    // Resolved from the command registration so plugin.yml aliases stay the single source of truth.
+    private final Set<String> allowedCommands = new HashSet<>();
+
     public ProtectionListener() {
+        PluginCommand command = InventoryPagesPlus.plugin.getCommand("pageprotect");
+        if (command != null) {
+            allowedCommands.add(command.getName().toLowerCase(Locale.ROOT));
+            for (String alias : command.getAliases())
+                allowedCommands.add(alias.toLowerCase(Locale.ROOT));
+        }
         Bukkit.getPluginManager().registerEvents(this, InventoryPagesPlus.plugin);
         DebugManager.debug("LOADING EVENT", "Loaded ProtectionListener.");
     }
@@ -47,8 +62,7 @@ public class ProtectionListener implements Listener {
 
         String command = ProtectionManager.normalizeCommand(message.substring(1).trim().split("\\s+")[0]);
 
-        // The unlock command must always pass, otherwise a locked player could never unlock.
-        if (command.equals("baove") || command.equals("pageprotect"))
+        if (allowedCommands.contains(command))
             return;
 
         if (Settings.PROTECTION_COMMAND_BLACKLIST.contains(command)) {

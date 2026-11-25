@@ -6,6 +6,7 @@ import me.cortezromeo.inventorypagesplus.language.Messages;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
 import me.cortezromeo.inventorypagesplus.manager.ProtectionManager;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
+import me.cortezromeo.inventorypagesplus.support.DialogSupport;
 import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -17,12 +18,14 @@ import org.bukkit.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ProtectionCommand implements CommandExecutor, TabExecutor {
 
     public ProtectionCommand() {
-        InventoryPagesPlus.plugin.getCommand("baove").setExecutor(this);
+        InventoryPagesPlus.plugin.getCommand("pageprotect").setExecutor(this);
         DebugManager.debug("LOADING COMMAND", "Loaded ProtectionCommand.");
     }
 
@@ -44,19 +47,37 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
             return false;
         }
 
-        if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
+        // The dialog is only a richer entry point: every button runs the matching sub-command, so
+        // the plain command paths below stay the single source of truth and the fallback.
+        if (args.length == 0) {
+            if (!openMainDialog(player, data, label))
+                sendHelp(player);
+            return false;
+        }
+        // A locked page only accepts a PIN attempt, help, status, and a permitted admin reset.
+        if (data.isProtectionLocked() && !isAllowedWhileLocked(player, args[0])) {
+            MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_LOCKED_REMINDER);
+            return false;
+        }
+        if (args[0].equalsIgnoreCase("help")) {
             sendHelp(player);
             return false;
         }
         if (args[0].equalsIgnoreCase("set")) {
+            if (args.length == 1 && openSetDialog(player, data, label))
+                return false;
             handleSet(player, data, args);
             return false;
         }
         if (args[0].equalsIgnoreCase("change")) {
+            if (args.length == 1 && openChangeDialog(player, data, label))
+                return false;
             handleChange(player, data, args);
             return false;
         }
         if (args[0].equalsIgnoreCase("remove")) {
+            if (args.length == 1 && openRemoveDialog(player, data, label))
+                return false;
             handleRemove(player, data, args);
             return false;
         }
@@ -73,8 +94,101 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
             return false;
         }
 
-        handleUnlock(player, data, args[0]);
+        // Only digit arguments count as PIN guesses, so a typo never burns an attempt.
+        if (isPinArgument(args[0]))
+            handleUnlock(player, data, args[0]);
+        else
+            sendHelp(player);
         return false;
+    }
+
+    private boolean isAllowedWhileLocked(Player player, String arg) {
+        return isPinArgument(arg)
+                || arg.equalsIgnoreCase("help")
+                || arg.equalsIgnoreCase("status")
+                || (arg.equalsIgnoreCase("admin") && player.hasPermission("inventorypagesplus.protect.admin"));
+    }
+
+    private boolean isPinArgument(String arg) {
+        if (arg.isEmpty())
+            return false;
+        for (int i = 0; i < arg.length(); i++) {
+            if (arg.charAt(i) < '0' || arg.charAt(i) > '9')
+                return false;
+        }
+        return true;
+    }
+
+    private boolean openMainDialog(Player player, PlayerInventoryDatabase data, String label) {
+        // A locked page only has one useful action, so ask for the PIN instead of showing the menu.
+        if (data.hasProtectionPin() && data.isProtectionLocked()) {
+            if (ProtectionManager.isBanned(data)) {
+                sendBanned(player, data);
+                return true;
+            }
+            return openUnlockDialog(player, label);
+        }
+        return openMenu(player, data, label);
+    }
+
+    private boolean openMenu(Player player, PlayerInventoryDatabase data, String label) {
+        Map<String, String> actions = new LinkedHashMap<>();
+        if (data.hasProtectionPin()) {
+            actions.put(Messages.COMMAND_PROTECTION_DIALOG_BUTTON_LOCK, label + " lock");
+            actions.put(Messages.COMMAND_PROTECTION_DIALOG_BUTTON_CHANGE, label + " change");
+            actions.put(Messages.COMMAND_PROTECTION_DIALOG_BUTTON_REMOVE, label + " remove");
+        } else {
+            actions.put(Messages.COMMAND_PROTECTION_DIALOG_BUTTON_SET, label + " set");
+        }
+        actions.put(Messages.COMMAND_PROTECTION_DIALOG_BUTTON_STATUS, label + " status");
+
+        return DialogSupport.showMenu(player, Messages.COMMAND_PROTECTION_DIALOG_TITLE,
+                Messages.COMMAND_PROTECTION_DIALOG_MENU_BODY, actions);
+    }
+
+    private boolean openSetDialog(Player player, PlayerInventoryDatabase data, String label) {
+        // Falling through lets handleSet report the already-set error instead of a doomed dialog.
+        if (data.hasProtectionPin())
+            return false;
+        Map<String, String> inputs = new LinkedHashMap<>();
+        inputs.put("pin", Messages.COMMAND_PROTECTION_DIALOG_INPUT_PIN);
+        inputs.put("confirm", Messages.COMMAND_PROTECTION_DIALOG_INPUT_CONFIRM_PIN);
+        return openPrompt(player, Messages.COMMAND_PROTECTION_DIALOG_SET_TITLE,
+                Messages.COMMAND_PROTECTION_DIALOG_SET_BODY, inputs, label + " set $(pin) $(confirm)");
+    }
+
+    private boolean openUnlockDialog(Player player, String label) {
+        Map<String, String> inputs = new LinkedHashMap<>();
+        inputs.put("pin", Messages.COMMAND_PROTECTION_DIALOG_INPUT_PIN);
+        return openPrompt(player, Messages.COMMAND_PROTECTION_DIALOG_UNLOCK_TITLE,
+                Messages.COMMAND_PROTECTION_DIALOG_UNLOCK_BODY, inputs, label + " $(pin)");
+    }
+
+    private boolean openChangeDialog(Player player, PlayerInventoryDatabase data, String label) {
+        // Falling through lets handleChange report the not-set error instead of a doomed dialog.
+        if (!data.hasProtectionPin())
+            return false;
+        Map<String, String> inputs = new LinkedHashMap<>();
+        inputs.put("old", Messages.COMMAND_PROTECTION_DIALOG_INPUT_PIN);
+        inputs.put("new", Messages.COMMAND_PROTECTION_DIALOG_INPUT_NEW_PIN);
+        inputs.put("confirm", Messages.COMMAND_PROTECTION_DIALOG_INPUT_CONFIRM_PIN);
+        return openPrompt(player, Messages.COMMAND_PROTECTION_DIALOG_CHANGE_TITLE,
+                Messages.COMMAND_PROTECTION_DIALOG_CHANGE_BODY, inputs, label + " change $(old) $(new) $(confirm)");
+    }
+
+    private boolean openRemoveDialog(Player player, PlayerInventoryDatabase data, String label) {
+        // Falling through lets handleRemove report the not-set error instead of a doomed dialog.
+        if (!data.hasProtectionPin())
+            return false;
+        Map<String, String> inputs = new LinkedHashMap<>();
+        inputs.put("pin", Messages.COMMAND_PROTECTION_DIALOG_INPUT_PIN);
+        return openPrompt(player, Messages.COMMAND_PROTECTION_DIALOG_REMOVE_TITLE,
+                Messages.COMMAND_PROTECTION_DIALOG_REMOVE_BODY, inputs, label + " remove $(pin)");
+    }
+
+    private boolean openPrompt(Player player, String title, String body, Map<String, String> inputs, String commandTemplate) {
+        return DialogSupport.showPrompt(player, title, body, inputs, commandTemplate,
+                Messages.COMMAND_PROTECTION_DIALOG_CONFIRM, Messages.COMMAND_PROTECTION_DIALOG_CANCEL);
     }
 
     private void handleSet(Player player, PlayerInventoryDatabase data, String[] args) {
@@ -114,6 +228,11 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
             MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_ALREADY_UNLOCKED);
             return;
         }
+        // Malformed PINs are rejected before checkPin so only real guesses cost an attempt.
+        if (!ProtectionManager.isValidPin(pin)) {
+            sendInvalidPin(player);
+            return;
+        }
         if (!checkPin(player, data, pin))
             return;
 
@@ -146,14 +265,10 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
             return;
         }
 
-        boolean wasLocked = data.isProtectionLocked();
+        // The locked-state gate above guarantees an unlocked page, so no unlock handling is needed here.
         data.setProtectionPinHash(ProtectionManager.hashPin(newPin));
         data.setProtectionAttempts(0);
         data.setProtectionBanUntil(0);
-        if (wasLocked)
-            ProtectionManager.unlock(data);
-        else
-            data.setProtectionUnlocked(true);
         InventoryPagesPlus.getDatabaseManager().savePlayerInventory(player.getName());
         MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_CHANGE_SUCCESS);
     }
@@ -170,14 +285,10 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
         if (!checkPin(player, data, args[1]))
             return;
 
-        boolean wasLocked = data.isProtectionLocked();
+        // The locked-state gate above guarantees an unlocked page, so no unlock handling is needed here.
         data.setProtectionPinHash(null);
         data.setProtectionAttempts(0);
         data.setProtectionBanUntil(0);
-        if (wasLocked)
-            ProtectionManager.unlock(data);
-        else
-            data.setProtectionUnlocked(true);
         InventoryPagesPlus.getDatabaseManager().savePlayerInventory(player.getName());
         MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_REMOVE_SUCCESS);
     }
@@ -187,11 +298,10 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
             MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_NOT_SET);
             return;
         }
-        // Re-locking an already hidden page would wipe the real items sitting in slots 9..35.
-        if (!data.isProtectionLocked()) {
-            ProtectionManager.lock(data);
-            InventoryPagesPlus.getDatabaseManager().savePlayerInventory(player.getName());
-        }
+        // The locked-state gate above guarantees an unlocked page here, so re-locking can never
+        // hit the case where real items sit in the display slots (ProtectionManager.lock saves first).
+        ProtectionManager.lock(data);
+        InventoryPagesPlus.getDatabaseManager().savePlayerInventory(player.getName());
         MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_LOCKED);
     }
 

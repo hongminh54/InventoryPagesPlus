@@ -11,6 +11,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -106,6 +107,8 @@ public class InventorySeeEnderChest extends InventorySee {
         if (event.getClickedInventory() == null)
             return;
         if (event.getClickedInventory().getType() == InventoryType.PLAYER) {
+            if (handleIntervention(event, (Player) event.getWhoClicked()))
+                return;
             PlayerPageInventory.handleEvent(event);
             return;
         }
@@ -113,6 +116,26 @@ public class InventorySeeEnderChest extends InventorySee {
         // cancel click event
         event.setCancelled(true);
         super.handleMenu(event);
+    }
+
+    @Override
+    protected Inventory interventionStorage(Player target) {
+        return target.getEnderChest();
+    }
+
+    @Override
+    protected boolean isEditableSlot(Player target, int viewSlot) {
+        return viewSlot >= 0 && viewSlot < target.getEnderChest().getSize();
+    }
+
+    @Override
+    protected ItemStack getTargetSlotItem(Player target, int viewSlot) {
+        return target.getEnderChest().getItem(viewSlot);
+    }
+
+    @Override
+    protected void setTargetSlotItem(Player target, int viewSlot, ItemStack item) {
+        target.getEnderChest().setItem(viewSlot, item);
     }
 
     @Override
