@@ -5,6 +5,7 @@ import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.file.inventory.InvseeInventoryFile;
 import me.cortezromeo.inventorypagesplus.inventory.PlayerPageInventory;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
+import me.cortezromeo.inventorypagesplus.manager.PageJumpManager;
 import me.cortezromeo.inventorypagesplus.manager.PageLimitManager;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 import me.cortezromeo.inventorypagesplus.util.ItemUtil;
@@ -158,6 +159,14 @@ public class InventorySeeMain extends InventorySee {
         if (event.getCurrentItem() != null && event.getCurrentItem().getType() != Material.AIR) {
             String customData = InventoryPagesPlus.nms.getCustomData(event.getCurrentItem());
             if (customData.equals("next") || customData.equals("prev")) {
+                // Shift+click jumps to a typed page; plain click steps one page like before.
+                if (PageJumpManager.isShiftClick(event) && PageJumpManager.begin(getOwner(),
+                        getTargetInventoryDatabase().getEffectiveMaxPage(), page -> {
+                            setPage(page);
+                            setMenuItems();
+                            open();
+                        }))
+                    return;
                 if (customData.equals("next"))
                     addPage(1);
                 else

@@ -19,6 +19,9 @@ debug:
   enabled: false
   prefix: '&e[INV.PAGES+ DEBUG] '
 
+update-checker:
+  enabled: true
+
 # What based database will be used for storing player's inventory.
 # Please restart server after you change this setting.
 database:
@@ -91,6 +94,12 @@ inventory-settings:
   # Otherwise, plugin will only use survival inventory database for all game modes.
   # PLEASE don't use reload command, please restart server after changing this option.
   use-creative-inventory: false
+  # Shift+clicking a previous/next page button jumps directly to a typed page number
+  # auto: dialog API on servers that support it (Paper 1.21.7+), chat input on older servers.
+  # dialog: always use the dialog API (falls back to chat when unsupported).
+  # chat: always type the page number in chat.
+  # disabled: turn the feature off.
+  page-jump: auto
   # These slots below won't be saved and loaded.
   # Player cannot use these slots for setting up the previous and next page items position.
   # Please do not set the default previous and next page item position to any of these slots.

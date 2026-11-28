@@ -14,11 +14,7 @@ import me.cortezromeo.inventorypagesplus.language.English;
 import me.cortezromeo.inventorypagesplus.language.Messages;
 import me.cortezromeo.inventorypagesplus.language.Vietnamese;
 import me.cortezromeo.inventorypagesplus.listener.*;
-import me.cortezromeo.inventorypagesplus.manager.AutoFixManager;
-import me.cortezromeo.inventorypagesplus.manager.AutoSaveManager;
-import me.cortezromeo.inventorypagesplus.manager.DatabaseManager;
-import me.cortezromeo.inventorypagesplus.manager.DebugManager;
-import me.cortezromeo.inventorypagesplus.manager.InventoryPagesPlusDataManager;
+import me.cortezromeo.inventorypagesplus.manager.*;
 import me.cortezromeo.inventorypagesplus.server.VersionSupport;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDataStorage;
 import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
@@ -75,12 +71,7 @@ public class InventoryPagesPlus extends JavaPlugin {
         initSupports();
 
         AutoSaveManager.startAutoSave(Settings.AUTO_SAVE_SECONDS);
-
-        // Check license key when the plugin is activated from dihoastore.net
-/*        if (!DiHoaStore.doDiHoa()) {
-            Bukkit.getServer().getPluginManager().disablePlugin(InventoryPagesPlus.plugin);
-            return;
-        }*/
+        UpdateChecker.check();
 
         MessageUtil.log("&f--------------------------------");
         MessageUtil.log("&2  _                                                      _");
@@ -91,7 +82,7 @@ public class InventoryPagesPlus extends JavaPlugin {
         MessageUtil.log("&2                  |_|          |___/              |_|");
         MessageUtil.log("");
         MessageUtil.log("&fVersion: &b" + getDescription().getVersion());
-        MessageUtil.log("&fAuthor: Cortez_Romeo");
+        MessageUtil.log("&fAuthor: Cortez_Romeo, hongminh54");
         MessageUtil.log("");
         MessageUtil.log("&fSupport:");
         MessageUtil.log((papiSupport ? "&2[YES] &aPlaceholderAPI" : "&4[NO] &cPlaceholderAPI"));
@@ -149,7 +140,7 @@ public class InventoryPagesPlus extends JavaPlugin {
         saveDefaultConfig();
         File configFile = new File(getDataFolder(), "config.yml");
         try {
-            ConfigUpdater.update(this, "config.yml", configFile, "inventory-settings");
+            ConfigUpdater.update(this, "config.yml", configFile, "inventory-settings", "update-checker");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -314,6 +305,7 @@ public class InventoryPagesPlus extends JavaPlugin {
         new InvseeCommand();
         new ProtectionCommand();
         new HistoryCommand();
+        new PageJumpManager();
     }
 
     public void initListeners() {

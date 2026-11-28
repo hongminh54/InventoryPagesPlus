@@ -5,6 +5,8 @@ import me.cortezromeo.inventorypagesplus.Settings;
 import me.cortezromeo.inventorypagesplus.file.inventory.PlayerInventoryFile;
 import me.cortezromeo.inventorypagesplus.language.Messages;
 import me.cortezromeo.inventorypagesplus.manager.DebugManager;
+import me.cortezromeo.inventorypagesplus.manager.PageJumpManager;
+import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 import me.cortezromeo.inventorypagesplus.util.ItemUtil;
 import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import org.bukkit.GameMode;
@@ -62,13 +64,22 @@ public class PlayerPageInventory {
             ItemStack item = event.getCurrentItem();
             int customInvSlot = event.getSlot() - 9;
             UUID playerUUID = player.getUniqueId();
+            PlayerInventoryDatabase database = InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(playerUUID);
 
-            if (customInvSlot == InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(playerUUID).getPrevItemPos()) {
+            if (customInvSlot == database.getPrevItemPos() || customInvSlot == database.getNextItemPos()) {
                 event.setCancelled(true);
-                InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(playerUUID).prevPage();
-            } else if (customInvSlot == InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(playerUUID).getNextItemPos()) {
-                event.setCancelled(true);
-                InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(playerUUID).nextPage();
+                boolean shift = PageJumpManager.isShiftClick(event);
+                // Shift+click jumps to a typed page; plain click steps one page like before.
+                if (shift && PageJumpManager.begin(player, database.getEffectiveMaxPage(),
+                        page -> {
+                            database.saveCurrentPage();
+                            database.showPage(page);
+                        }))
+                    return;
+                if (customInvSlot == database.getPrevItemPos())
+                    database.prevPage();
+                else
+                    database.nextPage();
             }
             if (item != null) {
                 if (item.getType() != Material.AIR) {

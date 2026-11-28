@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ProtectionManager {
 
@@ -22,6 +24,20 @@ public class ProtectionManager {
     private static final int KEY_LENGTH = 256;
     private static final int SALT_BYTES = 16;
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    // Admin ban reasons live in memory only; the lock itself survives restarts through the PIN state.
+    private static final class AdminBan {
+        final String reason;
+        // True when the PIN was assigned by the ban, so unban must remove it again.
+        final boolean assignedPin;
+
+        AdminBan(String reason, boolean assignedPin) {
+            this.reason = reason;
+            this.assignedPin = assignedPin;
+        }
+    }
+
+    private static final Map<String, AdminBan> ADMIN_BANS = new ConcurrentHashMap<>();
 
     // Normalizes a command to a lowercase root name: strips a leading '/' and any 'namespace:' prefix.
     public static String normalizeCommand(String raw) {
@@ -181,6 +197,44 @@ public class ProtectionManager {
         data.saveCurrentPage();
         data.setProtectionUnlocked(false);
         data.clearDisplayedPage();
+    }
+
+    // Hard admin lock: a player without a PIN gets an unguessable assigned one so unban is the only exit.
+    public static void adminBan(PlayerInventoryDatabase data, String reason) {
+        boolean assignedPin = !data.hasProtectionPin();
+        if (assignedPin)
+            data.setProtectionPinHash(hashPin(randomPin()));
+        lock(data);
+        ADMIN_BANS.put(data.getPlayerUUID(), new AdminBan(reason, assignedPin));
+    }
+
+    // Returns false when the target was not under an admin ban.
+    public static boolean adminUnban(PlayerInventoryDatabase data) {
+        AdminBan ban = ADMIN_BANS.remove(data.getPlayerUUID());
+        if (ban == null)
+            return false;
+        if (ban.assignedPin)
+            data.setProtectionPinHash(null);
+        data.setProtectionAttempts(0);
+        data.setProtectionBanUntil(0);
+        return true;
+    }
+
+    // Any other protection removal must also drop the stale admin ban record.
+    public static void clearAdminBan(PlayerInventoryDatabase data) {
+        ADMIN_BANS.remove(data.getPlayerUUID());
+    }
+
+    public static String getAdminBanReason(PlayerInventoryDatabase data) {
+        AdminBan ban = ADMIN_BANS.get(data.getPlayerUUID());
+        return ban == null ? null : ban.reason;
+    }
+
+    private static String randomPin() {
+        StringBuilder pin = new StringBuilder(16);
+        for (int i = 0; i < 16; i++)
+            pin.append(RANDOM.nextInt(10));
+        return pin.toString();
     }
 
 }

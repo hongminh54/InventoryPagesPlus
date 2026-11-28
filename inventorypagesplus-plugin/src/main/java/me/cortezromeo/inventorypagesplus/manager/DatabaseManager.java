@@ -96,7 +96,10 @@ public class DatabaseManager implements InventoryPagesPlusDataManager {
             addCrashedPlayer(playerUUID);
             if (data.isProtectionLocked()) {
                 // Leave the real items in slots 9..35 intact and frozen; never wipe them on join.
-                MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_LOCKED_REMINDER);
+                String adminReason = ProtectionManager.getAdminBanReason(data);
+                MessageUtil.sendMessage(player, adminReason == null
+                        ? Messages.COMMAND_PROTECTION_LOCKED_REMINDER
+                        : Messages.COMMAND_PROTECTION_ADMIN_BANNED.replace("%reason%", adminReason));
             } else {
                 data.showPage(player.getGameMode());
             }

@@ -86,6 +86,24 @@ public class Messages {
     public static String COMMAND_PROTECTION_DIALOG_REMOVE_BODY;
     public static String COMMAND_PROTECTION_DIALOG_CONFIRM;
     public static String COMMAND_PROTECTION_DIALOG_CANCEL;
+    public static List<String> COMMAND_PROTECTION_ADMIN_MESSAGES = new ArrayList<>();
+    public static String COMMAND_PROTECTION_ADMIN_BAN;
+    public static String COMMAND_PROTECTION_ADMIN_BAN_TARGET;
+    public static String COMMAND_PROTECTION_ADMIN_UNBAN;
+    public static String COMMAND_PROTECTION_ADMIN_UNBAN_TARGET;
+    public static String COMMAND_PROTECTION_ADMIN_SET;
+    public static String COMMAND_PROTECTION_ADMIN_SET_TARGET;
+    public static String COMMAND_PROTECTION_ADMIN_BANNED;
+
+    public static String COMMAND_PAGE_JUMP_PROMPT;
+    public static String COMMAND_PAGE_JUMP_NONE;
+    public static String COMMAND_PAGE_JUMP_INVALID;
+    public static String COMMAND_PAGE_JUMP_SUCCESS;
+    public static String COMMAND_PAGE_JUMP_DIALOG_TITLE;
+    public static String COMMAND_PAGE_JUMP_DIALOG_BODY;
+    public static String COMMAND_PAGE_JUMP_DIALOG_INPUT_PAGE;
+    public static String COMMAND_PAGE_JUMP_DIALOG_CONFIRM;
+    public static String COMMAND_PAGE_JUMP_DIALOG_CANCEL;
 
     public static String COMMAND_HISTORY_USAGE;
     public static String COMMAND_HISTORY_DISABLED;
@@ -228,6 +246,24 @@ public class Messages {
         COMMAND_PROTECTION_DIALOG_REMOVE_BODY = fileConfiguration.getString("messages.commands.protection.dialog.remove-body");
         COMMAND_PROTECTION_DIALOG_CONFIRM = fileConfiguration.getString("messages.commands.protection.dialog.confirm");
         COMMAND_PROTECTION_DIALOG_CANCEL = fileConfiguration.getString("messages.commands.protection.dialog.cancel");
+        COMMAND_PROTECTION_ADMIN_MESSAGES = fileConfiguration.getStringList("messages.commands.protection.admin-messages");
+        COMMAND_PROTECTION_ADMIN_BAN = fileConfiguration.getString("messages.commands.protection.admin-ban");
+        COMMAND_PROTECTION_ADMIN_BAN_TARGET = fileConfiguration.getString("messages.commands.protection.admin-ban-target");
+        COMMAND_PROTECTION_ADMIN_UNBAN = fileConfiguration.getString("messages.commands.protection.admin-unban");
+        COMMAND_PROTECTION_ADMIN_UNBAN_TARGET = fileConfiguration.getString("messages.commands.protection.admin-unban-target");
+        COMMAND_PROTECTION_ADMIN_SET = fileConfiguration.getString("messages.commands.protection.admin-set");
+        COMMAND_PROTECTION_ADMIN_SET_TARGET = fileConfiguration.getString("messages.commands.protection.admin-set-target");
+        COMMAND_PROTECTION_ADMIN_BANNED = fileConfiguration.getString("messages.commands.protection.admin-banned");
+
+        COMMAND_PAGE_JUMP_PROMPT = fileConfiguration.getString("messages.commands.page-jump.prompt");
+        COMMAND_PAGE_JUMP_NONE = fileConfiguration.getString("messages.commands.page-jump.none");
+        COMMAND_PAGE_JUMP_INVALID = fileConfiguration.getString("messages.commands.page-jump.invalid");
+        COMMAND_PAGE_JUMP_SUCCESS = fileConfiguration.getString("messages.commands.page-jump.success");
+        COMMAND_PAGE_JUMP_DIALOG_TITLE = fileConfiguration.getString("messages.commands.page-jump.dialog.title");
+        COMMAND_PAGE_JUMP_DIALOG_BODY = fileConfiguration.getString("messages.commands.page-jump.dialog.body");
+        COMMAND_PAGE_JUMP_DIALOG_INPUT_PAGE = fileConfiguration.getString("messages.commands.page-jump.dialog.input-page");
+        COMMAND_PAGE_JUMP_DIALOG_CONFIRM = fileConfiguration.getString("messages.commands.page-jump.dialog.confirm");
+        COMMAND_PAGE_JUMP_DIALOG_CANCEL = fileConfiguration.getString("messages.commands.page-jump.dialog.cancel");
 
         COMMAND_HISTORY_USAGE = fileConfiguration.getString("messages.commands.history.date-usage");
         COMMAND_HISTORY_DISABLED = fileConfiguration.getString("messages.commands.history.disabled");

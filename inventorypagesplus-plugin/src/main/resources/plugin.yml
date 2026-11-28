@@ -6,6 +6,7 @@ softdepend:
   - PlaceholderAPI
 authors:
   - Cortez_Romeo
+  - hongminh54
 description: Add pages to inventories for expansive storage!
 commands:
   inventorypagesplus:
@@ -38,9 +39,21 @@ commands:
       - pagehistory
   pageprotect:
     description: Protect your inventory pages with a PIN
+    permission: inventorypagesplus.protect
     aliases:
       - baove
+  pagejump:
+    description: Jump to a page after shift+clicking a page navigation button
 permissions:
+  inventorypagesplus.protect:
+    description: Use the page protection commands
+    default: true
+  inventorypagesplus.protect.admin:
+    description: Use the admin page protection sub-commands
+    default: op
+  inventorypagesplus.protect.bypass:
+    description: Never have inventory pages locked by the PIN protection
+    default: op
   inventorypagesplus.autofix.bypass:
     description: Never have your items changed by AutoFix
     default: op

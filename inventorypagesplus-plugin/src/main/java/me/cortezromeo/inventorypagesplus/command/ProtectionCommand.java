@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -122,6 +123,8 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
     private boolean openMainDialog(Player player, PlayerInventoryDatabase data, String label) {
         // A locked page only has one useful action, so ask for the PIN instead of showing the menu.
         if (data.hasProtectionPin() && data.isProtectionLocked()) {
+            if (sendAdminBanned(player, data))
+                return true;
             if (ProtectionManager.isBanned(data)) {
                 sendBanned(player, data);
                 return true;
@@ -325,38 +328,106 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
             MessageUtil.sendMessage(player, Messages.NO_PERMISSION);
             return;
         }
-        if (args.length < 3 || !args[1].equalsIgnoreCase("reset")) {
+        if (args.length < 3 || !isAdminAction(args[1])) {
             sendHelp(player);
             return;
         }
-        Player target = Bukkit.getPlayer(args[2]);
-        if (target == null) {
-            MessageUtil.sendMessage(player, Messages.INVALID_NAME.replace("%player%", args[2]));
+
+        // Offline targets are resolved through the name-based database loader.
+        Player target = Bukkit.getPlayerExact(args[2]);
+        PlayerInventoryDatabase targetData = target != null
+                ? getData(target)
+                : InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(args[2], true);
+        if (targetData == null) {
+            MessageUtil.sendMessage(player, Messages.TARGETS_DATABASE_DOESNT_EXIST.replace("%player%", args[2]));
             return;
         }
-        PlayerInventoryDatabase targetData = InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(target.getUniqueId());
-        if (targetData == null)
-            targetData = InventoryPagesPlus.getDatabaseManager().getPlayerInventoryDatabase(target.getName(), true);
-        if (targetData == null) {
-            MessageUtil.sendMessage(player, Messages.TARGETS_DATABASE_DOESNT_EXIST.replace("%player%", target.getName()));
+        String targetName = targetData.getPlayerName();
+
+        if (args[1].equalsIgnoreCase("set")) {
+            handleAdminSet(player, target, targetData, targetName, args);
+            return;
+        }
+        String reason = adminReason(args);
+        boolean wasLocked = targetData.isProtectionLocked();
+
+        if (args[1].equalsIgnoreCase("ban")) {
+            ProtectionManager.adminBan(targetData, reason);
+            InventoryPagesPlus.getDatabaseManager().savePlayerInventory(targetName);
+            MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_ADMIN_BAN
+                    .replace("%player%", targetName).replace("%reason%", reason));
+            if (target != null)
+                MessageUtil.sendMessage(target, Messages.COMMAND_PROTECTION_ADMIN_BAN_TARGET.replace("%reason%", reason));
             return;
         }
 
-        boolean wasLocked = targetData.isProtectionLocked();
-        targetData.setProtectionPinHash(null);
-        targetData.setProtectionAttempts(0);
-        targetData.setProtectionBanUntil(0);
+        if (args[1].equalsIgnoreCase("reset")) {
+            // reset wipes everything, including the player's own PIN.
+            ProtectionManager.clearAdminBan(targetData);
+            targetData.setProtectionPinHash(null);
+            targetData.setProtectionAttempts(0);
+            targetData.setProtectionBanUntil(0);
+            if (wasLocked)
+                ProtectionManager.unlock(targetData);
+            else
+                targetData.setProtectionUnlocked(true);
+            InventoryPagesPlus.getDatabaseManager().savePlayerInventory(targetName);
+            MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_ADMIN_RESET.replace("%player%", targetName));
+            if (target != null)
+                MessageUtil.sendMessage(target, Messages.COMMAND_PROTECTION_ADMIN_RESET_TARGET.replace("%player%", player.getName()));
+            return;
+        }
+
+        // unban is the exact inverse of ban: the assigned PIN disappears, the player's own PIN survives.
+        ProtectionManager.adminUnban(targetData);
         if (wasLocked)
             ProtectionManager.unlock(targetData);
         else
             targetData.setProtectionUnlocked(true);
-        InventoryPagesPlus.getDatabaseManager().savePlayerInventory(target.getName());
-        MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_ADMIN_RESET.replace("%player%", target.getName()));
-        MessageUtil.sendMessage(target, Messages.COMMAND_PROTECTION_ADMIN_RESET_TARGET.replace("%player%", player.getName()));
+        InventoryPagesPlus.getDatabaseManager().savePlayerInventory(targetName);
+        MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_ADMIN_UNBAN
+                .replace("%player%", targetName).replace("%reason%", reason));
+        if (target != null)
+            MessageUtil.sendMessage(target, Messages.COMMAND_PROTECTION_ADMIN_UNBAN_TARGET);
     }
 
-    // Shared verify path for unlock/change/remove: ban gate, then attempt counting on a wrong PIN.
+    private void handleAdminSet(Player player, Player target, PlayerInventoryDatabase targetData,
+                                String targetName, String[] args) {
+        if (args.length < 4) {
+            sendHelp(player);
+            return;
+        }
+        if (!ProtectionManager.isValidPin(args[3])) {
+            sendInvalidPin(player);
+            return;
+        }
+        boolean hadPin = targetData.hasProtectionPin();
+        // An explicit PIN replaces any administrator ban; setting one on an unprotected player locks their pages too.
+        ProtectionManager.clearAdminBan(targetData);
+        targetData.setProtectionPinHash(ProtectionManager.hashPin(args[3]));
+        targetData.setProtectionAttempts(0);
+        targetData.setProtectionBanUntil(0);
+        if (!hadPin)
+            ProtectionManager.lock(targetData);
+        InventoryPagesPlus.getDatabaseManager().savePlayerInventory(targetName);
+        MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_ADMIN_SET.replace("%player%", targetName));
+        if (target != null)
+            MessageUtil.sendMessage(target, Messages.COMMAND_PROTECTION_ADMIN_SET_TARGET);
+    }
+
+    private static boolean isAdminAction(String arg) {
+        return arg.equalsIgnoreCase("reset") || arg.equalsIgnoreCase("ban")
+                || arg.equalsIgnoreCase("unban") || arg.equalsIgnoreCase("set");
+    }
+
+    private static String adminReason(String[] args) {
+        return args.length <= 3 ? "none" : String.join(" ", Arrays.copyOfRange(args, 3, args.length));
+    }
+
+    // Shared verify path for unlock/change/remove: admin ban gate, ban gate, then attempt counting on a wrong PIN.
     private boolean checkPin(Player player, PlayerInventoryDatabase data, String pin) {
+        if (sendAdminBanned(player, data))
+            return false;
         if (ProtectionManager.isBanned(data)) {
             sendBanned(player, data);
             return false;
@@ -389,6 +460,15 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
                 .replace("%seconds%", String.valueOf(remaining % 60)));
     }
 
+    // Returns true and shows the reason when the pages sit under an administrator ban.
+    private boolean sendAdminBanned(Player player, PlayerInventoryDatabase data) {
+        String reason = ProtectionManager.getAdminBanReason(data);
+        if (reason == null)
+            return false;
+        MessageUtil.sendMessage(player, Messages.COMMAND_PROTECTION_ADMIN_BANNED.replace("%reason%", reason));
+        return true;
+    }
+
     private void sendInvalidPin(Player player) {
         int min = Math.max(1, Settings.PROTECTION_PIN_MIN_LENGTH);
         int max = Math.max(min, Settings.PROTECTION_PIN_MAX_LENGTH);
@@ -400,12 +480,17 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
     private void sendHelp(CommandSender sender) {
         for (String message : Messages.COMMAND_PROTECTION_MESSAGES)
             MessageUtil.sendMessage(sender, message);
+        // Admin usage lines only appear for players allowed to run them.
+        if (sender.hasPermission("inventorypagesplus.protect.admin"))
+            for (String message : Messages.COMMAND_PROTECTION_ADMIN_MESSAGES)
+                MessageUtil.sendMessage(sender, message);
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
         List<String> completions = new ArrayList<>();
         List<String> commands = new ArrayList<>();
+        boolean isAdmin = sender.hasPermission("inventorypagesplus.protect.admin");
 
         // Never complete PIN arguments, so a PIN is never leaked through tab completion.
         if (args.length == 1) {
@@ -415,13 +500,16 @@ public class ProtectionCommand implements CommandExecutor, TabExecutor {
             commands.add("lock");
             commands.add("status");
             commands.add("help");
-            if (sender.hasPermission("inventorypagesplus.protect.admin"))
+            if (isAdmin)
                 commands.add("admin");
             StringUtil.copyPartialMatches(args[0], commands, completions);
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("admin") && sender.hasPermission("inventorypagesplus.protect.admin")) {
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("admin") && isAdmin) {
+            commands.add("ban");
             commands.add("reset");
+            commands.add("set");
+            commands.add("unban");
             StringUtil.copyPartialMatches(args[1], commands, completions);
-        } else if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("reset") && sender.hasPermission("inventorypagesplus.protect.admin")) {
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("admin") && isAdmin && isAdminAction(args[1])) {
             for (Player player : Bukkit.getOnlinePlayers())
                 commands.add(player.getName());
             StringUtil.copyPartialMatches(args[2], commands, completions);

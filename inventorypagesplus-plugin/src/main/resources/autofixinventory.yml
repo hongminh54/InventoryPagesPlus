@@ -66,6 +66,7 @@ items:
     name: '&#55ff00Previous page'
     lore:
       - '&7Show the previous rules.'
+      - '&#55ff00Shift+Click to jump to a page.'
   nextPage:
     type: material
     value: ARROW
@@ -74,3 +75,4 @@ items:
     name: '&#55ff00Next page'
     lore:
       - '&7Show the next rules.'
+      - '&#55ff00Shift+Click to jump to a page.'

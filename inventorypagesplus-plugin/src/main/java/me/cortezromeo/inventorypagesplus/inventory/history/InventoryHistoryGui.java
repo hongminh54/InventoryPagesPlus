@@ -6,6 +6,7 @@ import me.cortezromeo.inventorypagesplus.file.inventory.HistoryInventoryFile;
 import me.cortezromeo.inventorypagesplus.history.*;
 import me.cortezromeo.inventorypagesplus.inventory.CustomInventoryBase;
 import me.cortezromeo.inventorypagesplus.language.Messages;
+import me.cortezromeo.inventorypagesplus.manager.PageJumpManager;
 import me.cortezromeo.inventorypagesplus.util.ItemUtil;
 import me.cortezromeo.inventorypagesplus.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -232,6 +233,14 @@ public class InventoryHistoryGui extends CustomInventoryBase {
         String action = controls.get(rawSlot);
         // Snapshot items can carry arbitrary PDC; only rendered control slots have authority.
         if (action != null) {
+            // Shift+click on a page button jumps to a typed page; plain click steps one change.
+            if (PageJumpManager.isShiftClick(event) && snapshot != null
+                    && (action.equals("prevPage") || action.equals("nextPage"))
+                    && PageJumpManager.begin(owner, snapshot.getMaxPage(), target -> {
+                        page = target;
+                        refresh();
+                    }))
+                return;
             if (action.equals(InventoryPagesPlus.nms.getCustomData(item)))
                 queueAction(action);
             return;

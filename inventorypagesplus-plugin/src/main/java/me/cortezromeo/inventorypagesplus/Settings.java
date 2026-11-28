@@ -42,6 +42,7 @@ public class Settings {
     public static boolean INVENTORY_SETTINGS_KEEP_INVENTORY;
     public static boolean INVENTORY_SETTINGS_KEEP_LEVEL;
     public static boolean INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY;
+    public static String INVENTORY_SETTINGS_PAGE_JUMP;
     public static int PAGE_PERMISSIONS_DEFAULT_MAX_PAGE;
     public static String PAGE_PERMISSIONS_UNLIMITED_LABEL;
     public static boolean ADVANCED_PICK_UP_SETTINGS_ENABLED;
@@ -84,6 +85,7 @@ public class Settings {
     public static boolean AUTOFIX_TOGGLE_ENCHANT;
     public static String AUTOFIX_DATA_FILE;
     public static int AUTOFIX_PLAYERS_PER_TICK;
+    public static boolean UPDATE_CHECKER_ENABLED;
 
     public static void setupValue() {
         DebugManager.debug("SETTINGS", "Loading settings from config yaml...");
@@ -113,6 +115,7 @@ public class Settings {
         INVENTORY_SETTINGS_KEEP_INVENTORY = configuration.getBoolean("inventory-settings.keep-inventory");
         INVENTORY_SETTINGS_KEEP_LEVEL = configuration.getBoolean("inventory-settings.keep-level");
         INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY = configuration.getBoolean("inventory-settings.use-creative-inventory");
+        INVENTORY_SETTINGS_PAGE_JUMP = configuration.getString("inventory-settings.page-jump", "auto");
         PAGE_PERMISSIONS_DEFAULT_MAX_PAGE = configuration.getInt("page-permissions.default-max-page");
         PAGE_PERMISSIONS_UNLIMITED_LABEL = configuration.getString("page-permissions.unlimited-label");
         ADVANCED_PICK_UP_SETTINGS_ENABLED = configuration.getBoolean("advanced-pick-up-settings.enabled");
@@ -179,6 +182,7 @@ public class Settings {
         DATABASE_SETTINGS_H2_HISTORY_TABLE = configuration.getString("database.settings.h2.history-table", "inventoryhistory");
         DATABASE_SETTINGS_MYSQL_HISTORY_TABLE = configuration.getString("database.settings.mysql.database.history-table", "inventoryhistory");
         AUTOFIX_ENABLED = configuration.getBoolean("autofix.enabled", true);
+        UPDATE_CHECKER_ENABLED = configuration.getBoolean("update-checker.enabled", true);
         AUTOFIX_TOGGLE_ENCHANT = configuration.getBoolean("autofix.toggle-enchant", true);
         AUTOFIX_DATA_FILE = configuration.getString("autofix.data-file", "autofix-data.yml");
         AUTOFIX_PLAYERS_PER_TICK = Math.max(1, configuration.getInt("autofix.players-per-tick", 1));

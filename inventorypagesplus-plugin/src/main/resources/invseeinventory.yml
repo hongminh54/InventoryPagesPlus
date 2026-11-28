@@ -106,6 +106,7 @@ items:
       - '&fSlots: &#aaffaa%usedSlots%&7/&#55ff0025'
       - ''
       - '&#FFCC00Left-Click to switch to previous page.'
+      - '&#55ff00Shift+Click to jump to a page.'
   next:
     direct: next
     type: customhead
@@ -120,6 +121,7 @@ items:
       - '&fSlots: &#aaffaa%usedSlots%&7/&#55ff0025'
       - ''
       - '&#FFCC00Left-Click to switch to next page.'
+      - '&#55ff00Shift+Click to jump to a page.'
   noPage:
     type: customhead
     value: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWRiNDUwZDg3MGU0YmY5Yjk3MjZlYWYzYTUwNjU1YmMyMjQ3NDk0MjgyYTZjMjdkMTE5OWNmMTQ4NmFmNTMwOCJ9fX0=

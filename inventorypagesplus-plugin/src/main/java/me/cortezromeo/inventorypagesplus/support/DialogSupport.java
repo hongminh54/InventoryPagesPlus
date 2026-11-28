@@ -11,15 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-/**
- * Reflection bridge to Paper's dialog API. Dialogs exist since Minecraft 1.21.6 and Paper ships
- * the developer API from 1.21.7, so the version is detected by the presence of the classes.
- *
- * The plugin is compiled against Spigot 1.16, so the dialog classes are resolved by name at
- * runtime instead of being linked at build time. When the server does not expose them every
- * call returns false and the caller keeps the plain command flow, so the feature degrades to
- * the old behaviour on older servers instead of failing to load.
- */
 public class DialogSupport {
 
     private static boolean available;
@@ -107,7 +98,7 @@ public class DialogSupport {
             return false;
 
         try {
-            Object base = buildBase(title, body, null);
+            Object base = buildBase(title, body, null, 0);
             List<Object> buttons = new ArrayList<>(actions.size());
             for (Map.Entry<String, String> action : actions.entrySet())
                 buttons.add(buildButton(action.getKey(), action.getValue()));
@@ -126,11 +117,17 @@ public class DialogSupport {
      */
     public static boolean showPrompt(Player player, String title, String body, Map<String, String> inputs,
                                      String commandTemplate, String confirmLabel, String cancelLabel) {
+        int pinMaxLength = Math.max(Math.max(1, Settings.PROTECTION_PIN_MIN_LENGTH), Settings.PROTECTION_PIN_MAX_LENGTH);
+        return showPrompt(player, title, body, inputs, commandTemplate, confirmLabel, cancelLabel, pinMaxLength);
+    }
+
+    public static boolean showPrompt(Player player, String title, String body, Map<String, String> inputs,
+                                     String commandTemplate, String confirmLabel, String cancelLabel, int inputMaxLength) {
         if (!available)
             return false;
 
         try {
-            Object base = buildBase(title, body, inputs);
+            Object base = buildBase(title, body, inputs, inputMaxLength);
             Object confirm = buildButton(confirmLabel, commandTemplate);
             // A null action only closes the dialog, which is exactly what "cancel" should do.
             Object cancel = buttonBuild.invoke(buttonBuilder.invoke(null, component(cancelLabel)));
@@ -161,7 +158,7 @@ public class DialogSupport {
         return dialogCreate.invoke(null, consumer);
     }
 
-    private static Object buildBase(String title, String body, Map<String, String> inputs) throws Exception {
+    private static Object buildBase(String title, String body, Map<String, String> inputs, int inputLimit) throws Exception {
         Object builder = baseBuilder.invoke(null, component(title));
 
         List<Object> bodies = new ArrayList<>(1);
@@ -170,7 +167,7 @@ public class DialogSupport {
 
         if (inputs != null && !inputs.isEmpty()) {
             List<Object> dialogInputs = new ArrayList<>(inputs.size());
-            int maxLength = Math.max(Math.max(1, Settings.PROTECTION_PIN_MIN_LENGTH), Settings.PROTECTION_PIN_MAX_LENGTH);
+            int maxLength = Math.max(1, inputLimit);
             for (Map.Entry<String, String> input : inputs.entrySet()) {
                 Object inputBuilder = inputText.invoke(null, input.getKey(), component(input.getValue()));
                 inputMaxLength.invoke(inputBuilder, maxLength);

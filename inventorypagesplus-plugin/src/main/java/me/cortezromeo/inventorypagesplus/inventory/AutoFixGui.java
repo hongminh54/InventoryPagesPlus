@@ -3,6 +3,7 @@ package me.cortezromeo.inventorypagesplus.inventory;
 import me.cortezromeo.inventorypagesplus.InventoryPagesPlus;
 import me.cortezromeo.inventorypagesplus.file.inventory.AutoFixInventoryFile;
 import me.cortezromeo.inventorypagesplus.manager.AutoFixManager;
+import me.cortezromeo.inventorypagesplus.manager.PageJumpManager;
 import me.cortezromeo.inventorypagesplus.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -90,15 +91,21 @@ public class AutoFixGui extends CustomInventoryBase {
     @Override
     public void handleMenu(InventoryClickEvent event) {
         int rawSlot = event.getRawSlot();
-        if (rawSlot == prevSlot) {
-            if (page > 0) {
-                page--;
-                reopen();
-            }
-        } else if (rawSlot == nextSlot) {
+        if (rawSlot == prevSlot || rawSlot == nextSlot) {
             int perPage = Math.max(1, ruleSlots.size());
             int maxPage = Math.max(0, (AutoFixManager.getRuleKeys().size() - 1) / perPage);
-            if (page < maxPage) {
+            // Shift+click jumps to a typed page; plain click steps one page like before.
+            if (PageJumpManager.isShiftClick(event) && PageJumpManager.begin(owner, maxPage, target -> {
+                page = target;
+                reopen();
+            }))
+                return;
+            if (rawSlot == prevSlot) {
+                if (page > 0) {
+                    page--;
+                    reopen();
+                }
+            } else if (page < maxPage) {
                 page++;
                 reopen();
             }

@@ -354,10 +354,14 @@ public final class HistoryStorageRegression {
             YamlConfiguration defaults = YamlConfiguration.loadConfiguration(Path.of("src/main/resources/config.yml").toFile());
             check(!defaults.contains("history.permissions"), "customizable permissions remain in defaults");
             PluginDescriptionFile description = new PluginDescriptionFile(new StringReader(Files.readString(Path.of("src/main/resources/plugin.yml"))));
-            eq(new HashSet<>(expected.values()), description.getPermissions().stream()
-                    .map(permission -> permission.getName()).collect(Collectors.toSet()), "declared permission nodes");
-            check(description.getPermissions().stream().allMatch(permission -> permission.getDefault().name().equals("OP")),
-                    "permission defaults changed");
+            Set<String> declared = description.getPermissions().stream()
+                    .map(permission -> permission.getName()).collect(Collectors.toSet());
+            check(declared.containsAll(expected.values()), "fixed history permission nodes missing from plugin.yml");
+            // Only the history nodes are pinned to OP here; other feature nodes own their own defaults.
+            check(description.getPermissions().stream()
+                            .filter(permission -> expected.values().contains(permission.getName()))
+                            .allMatch(permission -> permission.getDefault().name().equals("OP")),
+                    "history permission defaults changed");
             Field configField = JavaPlugin.class.getDeclaredField("newConfig");
             configField.setAccessible(true);
             Object previous = configField.get(InventoryPagesPlus.plugin);

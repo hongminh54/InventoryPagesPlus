@@ -58,6 +58,7 @@ items:
     name: '&#55ff00Previous inventory page'
     lore:
       - '&fPage %page%/%max_page%'
+      - '&#55ff00Shift+Click to jump to a page.'
     slot: 25
   nextPage:
     direct: nextPage
@@ -66,6 +67,7 @@ items:
     name: '&#55ff00Next inventory page'
     lore:
       - '&fPage %page%/%max_page%'
+      - '&#55ff00Shift+Click to jump to a page.'
     slot: 26
   info:
     type: MATERIAL
