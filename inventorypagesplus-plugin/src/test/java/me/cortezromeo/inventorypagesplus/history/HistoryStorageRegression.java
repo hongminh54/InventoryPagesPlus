@@ -12,8 +12,10 @@ import me.cortezromeo.inventorypagesplus.server.VersionSupport;
 import me.cortezromeo.inventorypagesplus.storage.InventoryHistorySQLStorage;
 import me.cortezromeo.inventorypagesplus.storage.InventoryHistoryStorage;
 import me.cortezromeo.inventorypagesplus.storage.InventoryHistoryYAMLStorage;
+import me.cortezromeo.inventorypagesplus.storage.PlayerInventoryDatabase;
 import me.cortezromeo.inventorypagesplus.util.StringUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.Sound;
@@ -126,6 +128,7 @@ public final class HistoryStorageRegression {
         sqlTests();
         yamlTests();
         managerTests();
+        creativeRestoreTests();
         extractionTests();
         dailyHistoryTests();
         for (Backend backend : Backend.values())
@@ -1181,6 +1184,99 @@ public final class HistoryStorageRegression {
         });
     }
 
+    private static void creativeRestoreTests() {
+        boolean previousConfig = Settings.INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY;
+        try {
+            Settings.INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY = false;
+            test("CREATIVE storage load recovers the used-creative flag from persisted items", () -> {
+                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                Field singleton = unsafeClass.getDeclaredField("theUnsafe");
+                singleton.setAccessible(true);
+                Object unsafe = singleton.get(null);
+                me.cortezromeo.inventorypagesplus.storage.PlayerInventory loaded =
+                        (me.cortezromeo.inventorypagesplus.storage.PlayerInventory) unsafeClass
+                                .getMethod("allocateInstance", Class.class).invoke(unsafe,
+                                        me.cortezromeo.inventorypagesplus.storage.PlayerInventory.class);
+                loaded.setUsedCreative(false);
+                loaded.setCreativeItems(new ArrayList<>(Arrays.asList(null, item(Material.EMERALD, 4))));
+                check(loaded.hasUsedCreative(), "flag not recovered from loaded creative items");
+                me.cortezromeo.inventorypagesplus.storage.PlayerInventory empty =
+                        (me.cortezromeo.inventorypagesplus.storage.PlayerInventory) unsafeClass
+                                .getMethod("allocateInstance", Class.class).invoke(unsafe,
+                                        me.cortezromeo.inventorypagesplus.storage.PlayerInventory.class);
+                empty.setUsedCreative(false);
+                empty.setCreativeItems(new ArrayList<>(Arrays.asList(null, null)));
+                check(!empty.hasUsedCreative(), "all-null creative list raised the flag");
+            });
+            test("CREATIVE snapshot keeps the creative payload while the config is disabled", () -> {
+                StubInventory live = new StubInventory();
+                live.items.put(2, new ArrayList<>(Arrays.asList(item(Material.DIRT, 3))));
+                live.creative.add(item(Material.EMERALD, 4));
+                live.usedCreative = true;
+                InventorySnapshot snapshot = live.snapshot(SnapshotReason.BEFORE_RESTORE);
+                check(snapshot.isUsedCreative(), "config gate dropped creative from the snapshot");
+                stack(snapshot.getCreativeItems().get(0), Material.EMERALD, 4);
+                live.usedCreative = false;
+                InventorySnapshot unused = live.snapshot(SnapshotReason.PERIODIC);
+                check(!unused.isUsedCreative(), "unused flag recorded as used");
+                eq(0, unused.getCreativeItems().size(), "unused creative payload kept");
+            });
+            test("CREATIVE legacy no-payload restore keeps live creative and stays rollable", () -> {
+                StubInventory live = new StubInventory();
+                live.creative.add(item(Material.DIAMOND, 2));
+                live.usedCreative = true;
+                InventorySnapshot before = live.snapshot(SnapshotReason.BEFORE_RESTORE);
+                InventorySnapshot legacy = new InventorySnapshot(uuid(9), A, "Alice", 9, SnapshotReason.JOIN, ALPHA,
+                        2, 10, false, new HashMap<>(live.items), List.of());
+                live.apply(legacy);
+                eq(1, live.creative.size(), "legacy snapshot wiped live creative items");
+                stack(live.creative.get(0), Material.DIAMOND, 2);
+                check(live.usedCreative, "legacy snapshot cleared the used flag");
+                live.creative.set(0, item(Material.DIAMOND, 99));
+                live.apply(before);
+                eq(27, live.creative.size(), "rollback payload not padded");
+                stack(live.creative.get(0), Material.DIAMOND, 2);
+            });
+            test("CREATIVE payload restore replaces live creative and pads to 27 slots", () -> {
+                StubInventory live = new StubInventory();
+                live.creative.add(item(Material.DIRT, 1));
+                live.usedCreative = true;
+                InventorySnapshot source = new InventorySnapshot(uuid(8), A, "Alice", 8, SnapshotReason.MANUAL, ALPHA,
+                        3, 12, true, new HashMap<>(live.items), Arrays.asList(null, item(Material.EMERALD, 7)));
+                live.apply(source);
+                eq(27, live.creative.size(), "creative not padded to 27");
+                check(live.creative.get(0) == null, "slot 0 not cleared");
+                stack(live.creative.get(1), Material.EMERALD, 7);
+                check(live.usedCreative, "flag not raised by payload apply");
+                eq(3, live.currentPage, "current page not restored");
+                eq(12, live.maxPage, "max page not raised");
+            });
+            test("CREATIVE safety comparison detects creative edits while the config is disabled", () -> {
+                StubInventory live = new StubInventory();
+                live.items.put(2, new ArrayList<>(Arrays.asList(item(Material.DIRT, 3))));
+                live.creative.add(item(Material.EMERALD, 4));
+                live.usedCreative = true;
+                InventorySnapshot before = live.snapshot(SnapshotReason.BEFORE_RESTORE);
+                check(live.unchangedSinceSafety(before), "unchanged data reported as changed");
+                live.creative.set(0, item(Material.EMERALD, 5));
+                check(!live.unchangedSinceSafety(before), "creative edit missed");
+            });
+            test("HISTORY snapshot raises max page to the highest page holding items", () -> {
+                StubInventory live = new StubInventory();
+                live.maxPage = 1;
+                live.currentPage = 1;
+                live.items.put(0, new ArrayList<>(Arrays.asList(item(Material.STONE, 1))));
+                live.items.put(3, new ArrayList<>(Arrays.asList(item(Material.DIRT, 3))));
+                live.items.put(6, new ArrayList<>(Arrays.asList((ItemStack) null, null)));
+                InventorySnapshot snapshot = live.snapshot(SnapshotReason.MANUAL);
+                eq(3, snapshot.getMaxPage(), "max page not raised to the highest page with items");
+                check(live.unchangedSinceSafety(snapshot), "safety comparison misses the raised max page");
+            });
+        } finally {
+            Settings.INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY = previousConfig;
+        }
+    }
+
     private static void extractionTests() {
         test("EXTRACTION copies armor/offhand items, snapshot stays intact and copies repeat", () -> {
             try (ExtractionFixture context = new ExtractionFixture()) {
@@ -1723,6 +1819,74 @@ public final class HistoryStorageRegression {
             if (!worker.awaitTermination(10, TimeUnit.SECONDS)) {
                 worker.shutdownNow();
                 throw new AssertionError("Test worker failed to terminate");
+            }
+        }
+    }
+
+    /** Stateful PlayerInventoryDatabase for the manager's private snapshot/apply pipeline. */
+    private static final class StubInventory {
+        final InventoryHistoryManager manager = new InventoryHistoryManager();
+        HashMap<Integer, ArrayList<ItemStack>> items = new HashMap<>();
+        ArrayList<ItemStack> creative = new ArrayList<>();
+        boolean usedCreative;
+        int currentPage = 2;
+        int maxPage = 10;
+
+        @SuppressWarnings("unchecked")
+        PlayerInventoryDatabase data() {
+            return proxy(PlayerInventoryDatabase.class, (instance, method, args) -> {
+                switch (method.getName()) {
+                    case "getPlayerUUID": return A;
+                    case "getPlayerName": return "Alice";
+                    case "getItems": return items;
+                    case "setItems": items = (HashMap<Integer, ArrayList<ItemStack>>) args[0]; return null;
+                    case "getCreativeItems": return creative;
+                    case "setCreativeItems": creative = (ArrayList<ItemStack>) args[0]; return null;
+                    case "hasUsedCreative": return usedCreative;
+                    case "setUsedCreative": usedCreative = (Boolean) args[0]; return null;
+                    case "getCurrentPage": return currentPage;
+                    case "setCurrentPage": currentPage = (Integer) args[0]; return null;
+                    case "getMaxPage": return maxPage;
+                    case "setMaxPage": maxPage = (int) args[0]; return null;
+                    case "showPage": return null;
+                    default: throw new UnsupportedOperationException("Fixture PlayerInventoryDatabase: " + method);
+                }
+            });
+        }
+
+        InventorySnapshot snapshot(SnapshotReason reason) throws Exception {
+            Method method = InventoryHistoryManager.class.getDeclaredMethod("snapshot",
+                    PlayerInventoryDatabase.class, SnapshotReason.class, Player.class);
+            method.setAccessible(true);
+            return (InventorySnapshot) checked(method, manager, new Object[]{data(), reason, null});
+        }
+
+        void apply(InventorySnapshot snapshot) throws Exception {
+            Method method = InventoryHistoryManager.class.getDeclaredMethod("applySnapshot",
+                    PlayerInventoryDatabase.class, InventorySnapshot.class, Player.class);
+            method.setAccessible(true);
+            Player player = proxy(Player.class, (instance, playerMethod, args) -> {
+                if (playerMethod.getName().equals("getGameMode"))
+                    return GameMode.SURVIVAL;
+                throw new UnsupportedOperationException("Fixture Player: " + playerMethod);
+            });
+            checked(method, manager, new Object[]{data(), snapshot, player});
+        }
+
+        boolean unchangedSinceSafety(InventorySnapshot before) throws Exception {
+            Method method = InventoryHistoryManager.class.getDeclaredMethod("unchangedSinceSafety",
+                    PlayerInventoryDatabase.class, InventorySnapshot.class);
+            method.setAccessible(true);
+            return (boolean) checked(method, manager, new Object[]{data(), before});
+        }
+
+        private static Object checked(Method method, Object target, Object[] args) throws Exception {
+            try {
+                return invoke(method, target, args);
+            } catch (Exception exception) {
+                throw exception;
+            } catch (Throwable throwable) {
+                throw new AssertionError(throwable);
             }
         }
     }

@@ -17,6 +17,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.h2.jdbc.JdbcConnection;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Connection;
@@ -111,8 +112,11 @@ public class InventoryHistoryManager {
         String configuredType = Settings.DATABASE_TYPE;
         String table = type == DatabaseType.MYSQL ? Settings.DATABASE_SETTINGS_MYSQL_HISTORY_TABLE
                 : Settings.DATABASE_SETTINGS_H2_HISTORY_TABLE;
-        String h2Url = "jdbc:h2:./" + InventoryPagesPlus.plugin.getDataFolder()
-                + "/database/" + Settings.DATABASE_SETTINGS_H2_FILE_NAME + ";mode=MySQL";
+        // Absolute path: "./" + an already-absolute dataFolder is an invalid H2 path on Windows.
+        File databaseFolder = new File(InventoryPagesPlus.plugin.getDataFolder(), "database");
+        databaseFolder.mkdirs();
+        String h2Url = "jdbc:h2:" + databaseFolder.getAbsolutePath().replace('\\', '/')
+                + "/" + Settings.DATABASE_SETTINGS_H2_FILE_NAME + ";mode=MySQL";
         String mysqlUrl = "jdbc:mysql://" + Settings.DATABASE_SETTINGS_MYSQL_HOST + ":"
                 + Settings.DATABASE_SETTINGS_MYSQL_PORT + "/" + Settings.DATABASE_SETTINGS_MYSQL_NAME;
         String user = Settings.DATABASE_SETTINGS_MYSQL_USER;
@@ -271,7 +275,7 @@ public class InventoryHistoryManager {
     private InventorySnapshot snapshot(PlayerInventoryDatabase data, SnapshotReason reason, Player player) {
         Map<Integer, List<ItemStack>> pages = new TreeMap<>();
         pages.putAll(data.getItems());
-        boolean usedCreative = Settings.INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY && data.hasUsedCreative();
+        boolean usedCreative = data.hasUsedCreative();
         List<ItemStack> armor = new ArrayList<>(4);
         ItemStack offhand = null;
         List<ItemStack> hotbar = new ArrayList<>(9);
@@ -287,8 +291,19 @@ public class InventoryHistoryManager {
         }
         return new InventorySnapshot(UUID.randomUUID().toString(), data.getPlayerUUID(), data.getPlayerName(),
                 System.currentTimeMillis(), reason, Settings.HISTORY_SERVER_ID, data.getCurrentPage(),
-                data.getMaxPage(), usedCreative, pages,
-                usedCreative ? data.getCreativeItems() : Collections.emptyList(), armor, offhand, hotbar);
+                usedMaxPage(data), usedCreative, pages,
+                data.getCreativeItems(), armor, offhand, hotbar);
+    }
+
+    // Pages above the stored max page exist as soon as a permission grants them, so the snapshot
+    // must also cover every page that actually holds items or the GUI cannot navigate to them.
+    private static int usedMaxPage(PlayerInventoryDatabase data) {
+        int maxPage = data.getMaxPage();
+        for (Map.Entry<Integer, ArrayList<ItemStack>> page : data.getItems().entrySet())
+            if (page.getKey() > maxPage && page.getValue().stream()
+                    .anyMatch(item -> item != null && !item.getType().isAir()))
+                maxPage = page.getKey();
+        return maxPage;
     }
 
     private CompletableFuture<Boolean> saveAsync(InventorySnapshot snapshot, boolean force) {
@@ -570,11 +585,6 @@ public class InventoryHistoryManager {
             return;
         }
         data.saveCurrentPage();
-        if (creativeOutOfScope(data)) {
-            restoring.remove(uuid);
-            callback.accept(false);
-            return;
-        }
         InventorySnapshot before;
         try {
             before = snapshot(data, SnapshotReason.BEFORE_RESTORE, target);
@@ -624,20 +634,12 @@ public class InventoryHistoryManager {
         }));
     }
 
-    private boolean creativeOutOfScope(PlayerInventoryDatabase data) {
-        return (!Settings.INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY || !data.hasUsedCreative())
-                && data.getCreativeItems().stream().anyMatch(item -> item != null);
-    }
-
     private boolean unchangedSinceSafety(PlayerInventoryDatabase current, InventorySnapshot before) {
-        if (creativeOutOfScope(current))
-            return false;
-        boolean usedCreative = Settings.INVENTORY_SETTINGS_USE_CREATIVE_INVENTORY && current.hasUsedCreative();
         return current.getItems().equals(before.getPages())
                 && current.getCurrentPage() == before.getCurrentPage()
-                && current.getMaxPage() == before.getMaxPage()
-                && usedCreative == before.isUsedCreative()
-                && (!usedCreative || current.getCreativeItems().equals(before.getCreativeItems()));
+                && usedMaxPage(current) == before.getMaxPage()
+                && current.hasUsedCreative() == before.isUsedCreative()
+                && (!current.hasUsedCreative() || current.getCreativeItems().equals(before.getCreativeItems()));
     }
 
     private void applySnapshot(PlayerInventoryDatabase data, InventorySnapshot snapshot, Player player) {
@@ -646,11 +648,15 @@ public class InventoryHistoryManager {
         for (Map.Entry<Integer, List<ItemStack>> entry : snapshot.getPages().entrySet())
             pages.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         data.setItems(pages);
-        ArrayList<ItemStack> creative = new ArrayList<>(snapshot.getCreativeItems());
-        while (creative.size() < 27)
-            creative.add(null);
-        data.setCreativeItems(creative);
-        data.setUsedCreative(snapshot.isUsedCreative());
+        // Snapshots taken before the flag was recovered carry no creative payload; keep live
+        // creative data instead of wiping it.
+        if (snapshot.isUsedCreative()) {
+            ArrayList<ItemStack> creative = new ArrayList<>(snapshot.getCreativeItems());
+            while (creative.size() < 27)
+                creative.add(null);
+            data.setCreativeItems(creative);
+            data.setUsedCreative(true);
+        }
         data.setCurrentPage(Math.max(0, snapshot.getCurrentPage()));
         data.showPage(player.getGameMode());
     }

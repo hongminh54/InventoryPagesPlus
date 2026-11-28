@@ -551,6 +551,10 @@ public class PlayerInventory implements PlayerInventoryDatabase {
     @Override
     public void setCreativeItems(ArrayList<ItemStack> creativeItems) {
         this.creativeItems = creativeItems;
+        // The persisted flag is not stored in the player row; recover it so a restart does not
+        // present loaded creative items as "never used". Only ever raises the flag.
+        if (creativeItems != null && creativeItems.stream().anyMatch(item -> item != null))
+            this.hasUsedCreative = true;
     }
 
     @Override
