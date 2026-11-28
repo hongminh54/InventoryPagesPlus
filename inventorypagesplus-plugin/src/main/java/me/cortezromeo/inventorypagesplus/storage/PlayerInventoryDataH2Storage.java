@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.h2.jdbc.JdbcConnection;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,7 +33,11 @@ public class PlayerInventoryDataH2Storage implements PlayerInventoryStorage {
             if (connection != null)
                 disable();
 
-            connection = new JdbcConnection("jdbc:h2:./" + InventoryPagesPlus.plugin.getDataFolder() + "/database/" + fileName + ";mode=MySQL", new Properties(), null, null, false);
+            File databaseFolder = new File(InventoryPagesPlus.plugin.getDataFolder(), "database");
+            databaseFolder.mkdirs();
+            // Absolute path: "./" + an already-absolute dataFolder is an invalid H2 path on Windows.
+            String databasePath = databaseFolder.getAbsolutePath().replace('\\', '/');
+            connection = new JdbcConnection("jdbc:h2:" + databasePath + "/" + fileName + ";mode=MySQL", new Properties(), null, null, false);
             connection.setAutoCommit(true);
         } catch (Exception e) {
             throw new RuntimeException(e);

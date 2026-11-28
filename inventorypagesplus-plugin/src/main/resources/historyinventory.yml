@@ -1,6 +1,6 @@
 # Full inventory history: page on the left, equipment above, hotbar below.
 # Controls: day 15/24, change 16/17, page 25/26, restore 34, close 43.
-# Placeholders: %player%, %date%, %page%, %max_page%, %used_slots%, %extract_status%.
+# Placeholders: %player%, %date%, %page%, %max_page%, %used_slots%.
 # Dates use history.date-format and history.time-zone. Copying never changes history.
 title: '&0%player% &8| &0%date%'
 items:
@@ -78,8 +78,6 @@ items:
       - '&7Left: inventory page; right: equipment.'
       - '&7Bottom row: hotbar.'
       - '&7Use the arrows to browse changes within this day.'
-      - ''
-      - '%extract_status%'
     slot: 7
   restore:
     direct: restore

@@ -22,7 +22,30 @@
     <properties>
         <java.version>16</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- MockBukkit configuration.
+             Artifact pattern on Maven Central:
+               org.mockbukkit.mockbukkit:mockbukkit-v{PAPER_API_VERSION}:{mockbukkit_version}
+             The test suite always runs against paper-api (test scope) which MUST be
+             declared BEFORE spigot-api (provided scope) so its org.bukkit classes win
+             on the test classpath. Main sources still compile against Spigot 1.16.5.
+             Switch target Minecraft version with a profile: -Pmc-v1.21, -Pmc-v26.2, ... -->
+        <mockbukkit.mc>26.3</mockbukkit.mc>
+        <mockbukkit.version>4.126.1</mockbukkit.version>
+        <paper.version>26.3.build.200-stable</paper.version>
     </properties>
+
+    <repositories>
+        <!-- PaperMC (needed for MockBukkit's paper-api dependency if used) -->
+        <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <!-- JitPack for building MockBukkit from Git -->
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>
@@ -74,6 +97,22 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                        <include>**/*TestCase.java</include>
+                    </includes>
+                    <!-- Isolate each test class in its own JVM: MockBukkit and Paper
+                         registries keep static state that leaks between test classes. -->
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                </configuration>
+            </plugin>
         </plugins>
         <resources>
             <resource>
@@ -84,6 +123,39 @@
     </build>
 
     <dependencies>
+        <!-- Test dependencies FIRST so paper-api's org.bukkit classes take
+             precedence over spigot-api on the test classpath (required by MockBukkit). -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>${paper.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockbukkit.mockbukkit</groupId>
+            <artifactId>mockbukkit-v${mockbukkit.mc}</artifactId>
+            <version>${mockbukkit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
@@ -136,5 +208,69 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- MockBukkit version matrix: mvn test -Pmc-v1.21 / mc-v26.1.2 / mc-v26.2 / mc-v26.3 -->
+        <profile>
+            <id>mc-v1.21</id>
+            <properties>
+                <mockbukkit.mc>1.21</mockbukkit.mc>
+                <mockbukkit.version>4.116.3</mockbukkit.version>
+                <paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>mc-v26.1.2</id>
+            <properties>
+                <mockbukkit.mc>26.1.2</mockbukkit.mc>
+                <mockbukkit.version>4.115.0</mockbukkit.version>
+                <paper.version>26.1.2.build.72-stable</paper.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>mc-v26.2</id>
+            <properties>
+                <mockbukkit.mc>26.2</mockbukkit.mc>
+                <mockbukkit.version>4.117.0</mockbukkit.version>
+                <paper.version>26.2.build.135-stable</paper.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>mc-v26.3</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <mockbukkit.mc>26.3</mockbukkit.mc>
+                <mockbukkit.version>4.126.1</mockbukkit.version>
+                <paper.version>26.3.build.200-stable</paper.version>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>require-jdk25</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireJavaVersion>
+                                            <version>[25,)</version>
+                                            <message>MockBukkit 4.126.x / paper-api 26.3 are built with Java 25 (class file 69). Run Maven with JDK 25: set JAVA_HOME to C:\Program Files\Java\jdk-25, or use an older matrix profile (e.g. -Pmc-v1.21 with JDK 21).</message>
+                                        </requireJavaVersion>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

@@ -93,7 +93,7 @@ public class PlayerPageInventory {
         return false;
     }
 
-    private static boolean isSwitcherItem(ItemStack item, ItemStack switcherItem) {
+    static boolean isSwitcherItem(ItemStack item, ItemStack switcherItem) {
         if (item == null || item.getType() != switcherItem.getType())
             return false;
 
@@ -101,7 +101,7 @@ public class PlayerPageInventory {
         ItemMeta switcherItemMeta = switcherItem.getItemMeta();
 
         return itemMeta != null && switcherItemMeta != null
-                && itemMeta.getDisplayName() != null
+                && itemMeta.getDisplayName() != null && !itemMeta.getDisplayName().isEmpty()
                 && itemMeta.getDisplayName().equals(switcherItemMeta.getDisplayName());
     }
 

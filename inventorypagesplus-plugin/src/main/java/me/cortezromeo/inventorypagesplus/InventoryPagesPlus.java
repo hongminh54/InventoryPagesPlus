@@ -33,7 +33,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 
-public final class InventoryPagesPlus extends JavaPlugin {
+public class InventoryPagesPlus extends JavaPlugin {
 
     public static InventoryPagesPlus plugin;
     public static VersionSupport nms;
